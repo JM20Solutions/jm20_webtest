@@ -1,597 +1,639 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Host Website (Example for N8N Chat Widget)</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-            background-color: #f0f2f5;
-            color: #333;
-            line-height: 1.6;
-        }
-        h1 {
-            color: #007bff;
-        }
-        p {
-            margin-bottom: 1em;
-        }
-        .content-placeholder {
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            min-height: 300px;
-            margin-bottom: 50px; /* Space for the fixed chat widget */
-        }
-        .instruction-box {
-            background-color: #e6f7ff;
-            border-left: 5px solid #007bff;
-            padding: 15px;
-            margin-top: 20px;
-            color: #333;
-            font-size: 0.95em;
-        }
-        .instruction-box code {
-            background-color: #f0f0f0;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: monospace;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Widget — Multitenant</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+  #scw-root * {
+    margin: 0; padding: 0; box-sizing: border-box;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  /* ─── Container ─── */
+  #scw-root {
+    --scw-primary: #2563eb;
+    --scw-primary-dark: #1d4ed8;
+    --scw-primary-soft: #dbeafe;
+    --scw-bg: #ffffff;
+    --scw-bg-alt: #f8fafc;
+    --scw-text: #1e293b;
+    --scw-muted: #64748b;
+    --scw-border: #e2e8f0;
+    --scw-radius: 18px;
+    --scw-shadow: 0 25px 60px -12px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.03);
+
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 999999;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ─── Loading Overlay ─── */
+  #scw-root .scw-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--scw-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    z-index: 10;
+    border-radius: var(--scw-radius);
+    transition: opacity 0.4s ease;
+  }
+
+  #scw-root .scw-loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #scw-root .scw-loader {
+    width: 32px; height: 32px;
+    border: 3px solid var(--scw-border);
+    border-top-color: var(--scw-primary);
+    border-radius: 50%;
+    animation: scwSpin 0.7s linear infinite;
+  }
+
+  @keyframes scwSpin { to { transform: rotate(360deg); } }
+
+  #scw-root .scw-loading-text {
+    font-size: 13px; color: var(--scw-muted); font-weight: 500;
+  }
+
+  /* ─── Error Banner ─── */
+  #scw-root .scw-error-banner {
+    display: none;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 13px;
+    padding: 10px 14px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  #scw-root .scw-error-banner.show { display: block; }
+
+  #scw-root .scw-error-banner button {
+    background: none; border: none; color: #2563eb;
+    text-decoration: underline; cursor: pointer; font-family: inherit;
+    font-size: 13px; margin-left: 6px;
+  }
+
+  /* ─── Bubble ─── */
+  #scw-root .scw-bubble {
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    background: var(--scw-primary);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 0 0 0 transparent;
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #scw-root .scw-bubble:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 32px rgba(0,0,0,0.22);
+  }
+
+  #scw-root .scw-bubble::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), transparent 60%);
+    pointer-events: none;
+  }
+
+  #scw-root .scw-bubble img.scw-bubble-logo {
+    width: 34px; height: 34px; border-radius: 50%; object-fit: cover;
+    position: relative; z-index: 1;
+    transition: opacity 0.25s, transform 0.25s;
+  }
+
+  #scw-root .scw-bubble svg {
+    width: 28px; height: 28px; fill: white;
+    position: absolute;
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 1;
+  }
+
+  #scw-root .scw-bubble .scw-icon-chat { opacity: 1; transform: scale(1) rotate(0); }
+  #scw-root .scw-bubble .scw-icon-close { opacity: 0; transform: scale(0.5) rotate(-90deg); }
+
+  #scw-root .scw-bubble.open .scw-icon-chat,
+  #scw-root .scw-bubble.open .scw-bubble-logo { opacity: 0; transform: scale(0.5) rotate(90deg); }
+  #scw-root .scw-bubble.open .scw-icon-close { opacity: 1; transform: scale(1) rotate(0); }
+
+  /* Badge */
+  #scw-root .scw-badge {
+    position: absolute; top: -3px; right: -3px;
+    width: 18px; height: 18px;
+    background: #ef4444; border-radius: 50%;
+    border: 2.5px solid white;
+    display: none; z-index: 2;
+  }
+
+  #scw-root .scw-badge.show {
+    display: block;
+    animation: scwPop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes scwPop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+
+  /* ─── Window ─── */
+  #scw-root .scw-window {
+    position: absolute; bottom: 80px; right: 0;
+    width: 390px; max-height: 580px; height: 72vh;
+    background: var(--scw-bg);
+    border-radius: var(--scw-radius);
+    box-shadow: var(--scw-shadow);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px) scale(0.94);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  #scw-root .scw-window.open {
+    opacity: 1; transform: translateY(0) scale(1); pointer-events: all;
+  }
+
+  /* ─── Header ─── */
+  #scw-root .scw-header {
+    background: var(--scw-primary);
+    color: white;
+    padding: 20px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #scw-root .scw-header::before {
+    content: '';
+    position: absolute; top: -50%; right: -20%;
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  #scw-root .scw-header-row {
+    display: flex; align-items: center; gap: 14px;
+    position: relative; z-index: 1;
+  }
+
+  #scw-root .scw-header .scw-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 17px; flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  #scw-root .scw-header .scw-avatar img {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+
+  #scw-root .scw-header .scw-h-name {
+    font-size: 16.5px; font-weight: 600; letter-spacing: -0.02em;
+  }
+
+  #scw-root .scw-header .scw-h-status {
+    font-size: 12.5px; opacity: 0.8;
+    display: flex; align-items: center; gap: 6px; margin-top: 2px;
+  }
+
+  #scw-root .scw-header .scw-status-dot {
+    width: 7px; height: 7px; background: #4ade80;
+    border-radius: 50%; display: inline-block;
+    box-shadow: 0 0 6px rgba(74,222,128,0.6);
+  }
+
+  /* ─── Messages ─── */
+  #scw-root .scw-messages {
+    flex: 1; overflow-y: auto; padding: 16px;
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--scw-bg-alt);
+  }
+
+  #scw-root .scw-messages::-webkit-scrollbar { width: 5px; }
+  #scw-root .scw-messages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+  #scw-root .scw-msg {
+    max-width: 82%; padding: 10px 15px;
+    border-radius: 16px; font-size: 14.5px; line-height: 1.55;
+    animation: scwMsg 0.3s ease-out; word-wrap: break-word;
+  }
+
+  @keyframes scwMsg { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+
+  #scw-root .scw-msg.bot {
+    align-self: flex-start;
+    background: var(--scw-bg);
+    color: var(--scw-text);
+    border: 1px solid var(--scw-border);
+    border-bottom-left-radius: 5px;
+  }
+
+  #scw-root .scw-msg.user {
+    align-self: flex-end;
+    background: var(--scw-primary);
+    color: white;
+    border-bottom-right-radius: 5px;
+  }
+
+  /* Typing */
+  #scw-root .scw-typing {
+    align-self: flex-start;
+    background: var(--scw-bg); border: 1px solid var(--scw-border);
+    border-radius: 16px; border-bottom-left-radius: 5px;
+    padding: 13px 20px;
+    display: none; gap: 5px; align-items: center;
+  }
+
+  #scw-root .scw-typing.show { display: flex; }
+
+  #scw-root .scw-typing span {
+    width: 7px; height: 7px; background: #94a3b8;
+    border-radius: 50%; animation: scwBounce 1.2s infinite;
+  }
+
+  #scw-root .scw-typing span:nth-child(2) { animation-delay: 0.15s; }
+  #scw-root .scw-typing span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes scwBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+    30% { transform: translateY(-7px); opacity: 1; }
+  }
+
+  /* ─── Input ─── */
+  #scw-root .scw-input-area {
+    padding: 12px 16px;
+    border-top: 1px solid var(--scw-border);
+    background: var(--scw-bg);
+    display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0;
+  }
+
+  #scw-root .scw-input-area textarea {
+    flex: 1;
+    border: 1.5px solid var(--scw-border);
+    border-radius: 14px; padding: 10px 14px;
+    font-size: 14px; font-family: inherit;
+    resize: none; outline: none;
+    max-height: 100px; min-height: 44px;
+    line-height: 1.45; color: var(--scw-text);
+    background: var(--scw-bg-alt);
+    transition: border-color 0.2s;
+  }
+
+  #scw-root .scw-input-area textarea:focus { border-color: var(--scw-primary); }
+  #scw-root .scw-input-area textarea::placeholder { color: var(--scw-muted); }
+
+  #scw-root .scw-send {
+    width: 44px; height: 44px;
+    border-radius: 14px; border: none;
+    background: var(--scw-primary); color: white;
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  #scw-root .scw-send:hover { background: var(--scw-primary-dark); }
+  #scw-root .scw-send:active { transform: scale(0.92); }
+  #scw-root .scw-send:disabled { opacity: 0.45; cursor: not-allowed; }
+  #scw-root .scw-send svg { width: 20px; height: 20px; fill: currentColor; }
+
+  /* ─── Footer ─── */
+  #scw-root .scw-footer {
+    text-align: center; padding: 7px;
+    font-size: 11px; color: var(--scw-muted);
+    background: var(--scw-bg); flex-shrink: 0;
+  }
+
+  /* ─── Mobile ─── */
+  @media (max-width: 440px) {
+    #scw-root .scw-window {
+      width: calc(100vw - 20px);
+      right: -14px;
+      max-height: calc(100vh - 110px);
+    }
+  }
+</style>
 </head>
 <body>
-    <h1>Welcome to Our Client Website!</h1>
-    <div class="content-placeholder">
-        <p>This is an example of a client's website content. Imagine this is your customer's actual webpage.</p>
-        <p>The chat widget on the bottom right is embedded directly into this page. It has its tenant ID hardcoded, specific to this client.</p>
-        <p>Feel free to interact with the chat to see how messages are sent to your n8n webhook along with the tenant information.</p>
+
+<div id="scw-root">
+  <!-- Bubble -->
+  <button class="scw-bubble" id="scwToggle" aria-label="Open chat">
+    <img class="scw-bubble-logo" id="scwBubbleLogo" style="display:none" alt="Logo">
+    <svg class="scw-icon-chat" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/><path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg>
+    <svg class="scw-icon-close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    <div class="scw-badge" id="scwBadge"></div>
+  </button>
+
+  <!-- Chat Window -->
+  <div class="scw-window" id="scwWindow">
+    <!-- Loading Overlay -->
+    <div class="scw-loading-overlay" id="scwLoading">
+      <div class="scw-loader"></div>
+      <span class="scw-loading-text">Loading support...</span>
     </div>
 
-    <div class="instruction-box">
-        <h3>How to use this example:</h3>
-        <ol>
-            <li><strong>Save this file:</strong> Save the entire content of this document as <code>index.html</code>.</li>
-            <li><strong>Open in browser:</strong> Open the <code>index.html</code> file in your web browser.</li>
-            <li><strong>Get an n8n Webhook URL:</strong> In your n8n instance, create a new workflow. Add a "Webhook" node (choose "Catch Webhook"). Copy the "Webhook URL" it provides.</li>
-            <li><strong>Configure the widget:</strong> In the <code>&lt;script&gt;</code> block below, replace <code>"YOUR_N8N_WEBHOOK_URL_HERE"</code> with your actual n8n Webhook URL. Also, set the <code>TENANT_ID</code> to something meaningful like <code>"ClientA_Website"</code>.</li>
-            <li>
-                <strong>Expose User Information (Client's Website):</strong> For the chat widget to pick up user details, the client's website *must* define a global JavaScript object named <code>window.n8nChatWidgetUser</code> with the user's <code>id</code>, <code>name</code>, and <code>email</code>. This needs to be done *before* the chat widget script loads.
-                <pre><code>&lt;script&gt;
-    // Example: Dynamically populate these values after a user logs in on the client's site
-    window.n8nChatWidgetUser = {
-        id: "user_12345",
-        name: "John Doe",
-        email: "john.doe@example.com"
-    };
-&lt;/script&gt;
-&lt;!-- Then, your N8N Chat Widget embed code below --&gt;</code></pre>
-                If <code>window.n8nChatWidgetUser</code> is not set, or is missing properties, the chat will still function but without user-specific data in the payload.
-            </li>
-            <li><strong>Test:</strong> Type a message in the chat widget and click "Send". Check your n8n workflow – you should see the incoming webhook request containing your message, the <code>TENANT_ID</code>, and now also the <code>userId</code>, <code>userName</code>, and <code>userEmail</code> if configured.</li>
-            <li><strong>To embed on a real site:</strong> Copy everything from <code>&lt;div id="n8n-chat-widget-root"&gt;&lt;/div&gt;</code> to the closing <code>&lt;/script&gt;</code> tag and paste it just before the closing <code>&lt;/body&gt;</code> tag of your client's HTML page. Remember to customize <code>N8N_WEBHOOK_URL</code> and <code>TENANT_ID</code> for each client! And importantly, ensure the <code>window.n8nChatWidgetUser</code> object is set by the client's site for logged-in users.</li>
-        </ol>
+    <!-- Header -->
+    <div class="scw-header">
+      <div class="scw-header-row">
+        <div class="scw-avatar" id="scwAvatar">?</div>
+        <div>
+          <div class="scw-h-name" id="scwName">Support</div>
+          <div class="scw-h-status"><span class="scw-status-dot"></span> <span id="scwOnlineText">Online</span></div>
+        </div>
+      </div>
     </div>
 
-    <!-- The N8N Chat Widget starts here -->
-    <div id="n8n-chat-widget-root"></div>
+    <!-- Error -->
+    <div class="scw-error-banner" id="scwError">
+      Couldn't load config. <button id="scwRetry">Retry</button>
+    </div>
 
-    <script>
-        // --- Configuration for THIS specific client's website ---
-        // IMPORTANT: Customize these two variables for EACH client website where you embed this script.
-        const N8N_WEBHOOK_URL = "https://your-n8n-instance.com/webhook/your-unique-id"; // REPLACE THIS with your actual n8n Webhook URL
-        const TENANT_ID = "Client_Website_ABC"; // REPLACE THIS with the specific tenant ID for this client
+    <!-- Messages -->
+    <div class="scw-messages" id="scwMessages">
+      <div class="scw-typing" id="scwTyping"><span></span><span></span><span></span></div>
+    </div>
 
-        // --- User Information (to be provided by the client's website) ---
-        // The client's website should define window.n8nChatWidgetUser before this script runs.
-        const currentUser = window.n8nChatWidgetUser || {}; // Fallback to an empty object if not defined
+    <!-- Input -->
+    <div class="scw-input-area">
+      <textarea id="scwInput" rows="1" placeholder="Type your message..." autocomplete="off"></textarea>
+      <button class="scw-send" id="scwSend" aria-label="Send">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
 
-        // --- Chat Widget HTML and CSS ---
-        // This entire block of HTML and CSS is injected into the 'n8n-chat-widget-root' div.
-        // For production, consider externalizing CSS to a .css file.
-        const chatWidgetContent = `
-            <style>
-                /* Basic styling for the chat widget - scoped as much as possible with specific IDs/classes */
-                #n8n-chat-widget-root {
-                    /* Initial position and size of the widget */
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    width: 350px;
-                    height: 450px; /* Adjust as needed */
-                    background-color: white;
-                    border: 1px solid #e0e0e0;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                    display: flex;
-                    flex-direction: column;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    font-size: 14px;
-                    z-index: 10000; /* Ensure it's above most other content */
-                    overflow: hidden;
-                    box-sizing: border-box; /* Include padding/border in element's total width and height */
-                }
-                #n8n-chat-widget-header {
-                    background-color: #007bff;
-                    color: white;
-                    padding: 10px 15px;
-                    font-size: 1.1em;
-                    font-weight: bold;
-                    text-align: center;
-                    flex-shrink: 0; /* Prevent header from shrinking */
-                }
-                #n8n-chat-widget-messages {
-                    flex-grow: 1;
-                    padding: 15px;
-                    overflow-y: auto;
-                    background-color: #f8f9fa;
-                    border-bottom: 1px solid #eee;
-                    display: flex;
-                    flex-direction: column; /* Messages stack vertically */
-                }
-                .n8n-chat-message {
-                    margin-bottom: 8px;
-                    padding: 8px 12px;
-                    border-radius: 8px;
-                    max-width: 85%;
-                    word-wrap: break-word;
-                    line-height: 1.4;
-                    box-sizing: border-box;
-                }
-                .n8n-chat-message.user {
-                    background-color: #dcf8c6; /* Light green for user messages */
-                    margin-left: auto; /* Push user message to the right */
-                    text-align: right;
-                    border-bottom-right-radius: 2px;
-                }
-                .n8n-chat-message.system {
-                    background-color: #e0e0e0; /* Gray for system messages */
-                    color: #555;
-                    font-size: 0.85em;
-                    text-align: left;
-                    margin-right: auto;
-                    border-bottom-left-radius: 2px;
-                }
-                .n8n-chat-message.agent { /* For replies from the n8n workflow / agent */
-                    background-color: #ffffff;
-                    border: 1px solid #e0e0e0;
-                    margin-right: auto; /* Push agent message to the left */
-                    text-align: left;
-                    border-bottom-left-radius: 2px;
-                }
-                #n8n-chat-widget-input-area {
-                    display: flex;
-                    padding: 10px 15px;
-                    border-top: 1px solid #eee;
-                    background-color: #fcfcfc;
-                    flex-shrink: 0; /* Prevent input area from shrinking */
-                }
-                #n8n-chat-widget-input {
-                    flex-grow: 1;
-                    border: 1px solid #ddd;
-                    border-radius: 20px;
-                    padding: 8px 12px;
-                    margin-right: 10px;
-                    font-size: 1em;
-                    outline: none;
-                    box-sizing: border-box;
-                }
-                #n8n-chat-widget-input:focus {
-                    border-color: #007bff;
-                    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
-                }
-                #n8n-chat-widget-send-button {
-                    background-color: #007bff;
-                    color: white;
-                    border: none;
-                    border-radius: 20px;
-                    padding: 8px 15px;
-                    cursor: pointer;
-                    font-size: 0.9em;
-                    font-weight: 600;
-                    transition: background-color 0.2s ease;
-                    flex-shrink: 0;
-                }
-                #n8n-chat-widget-send-button:hover {
-                    background-color: #0056b3;
-                }
-            </style>
-            <div id="n8n-chat-widget-container">
-                <div id="n8n-chat-widget-header">Chat with Us (${TENANT_ID})</div>
-                <div id="n8n-chat-widget-messages"></div>
-                <div id="n8n-chat-widget-input-area">
-                    <input type="text" id="n8n-chat-widget-input" placeholder="Type your message..." />
-                    <button id="n8n-chat-widget-send-button">Send</button>
-                </div>
-            </div>
-        `;
-
-        // Inject the widget HTML/CSS into the root div
-        const chatRoot = document.getElementById('n8n-chat-widget-root');
-        if (chatRoot) {
-            chatRoot.innerHTML = chatWidgetContent;
-        } else {
-            console.error("N8N Chat Widget: Root element #n8n-chat-widget-root not found. Make sure <div id='n8n-chat-widget-root'></div> exists in your HTML.");
-        }
-
-        // Get references to elements inside the widget (after they've been injected)
-        const chatMessages = document.getElementById('n8n-chat-widget-messages');
-        const messageInput = document.getElementById('n8n-chat-widget-input');
-        const sendMessageButton = document.getElementById('n8n-chat-widget-send-button');
-
-        // Function to add a message to the chat display
-        function addMessage(message, type = 'user') { // 'user', 'system', 'agent'
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('n8n-chat-message');
-            msgDiv.classList.add(type);
-            msgDiv.textContent = message;
-            chatMessages.appendChild(msgDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
-        }
-
-        // Function to send message to n8n webhook
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (message === '') {
-                return; // Don't send empty messages
-            }
-
-            addMessage(message, 'user'); // Display user's message locally
-            messageInput.value = ''; // Clear input field
-
-            if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.includes('YOUR_N8N_WEBHOOK_URL_HERE')) {
-                addMessage("System: Webhook URL not configured. Message not sent.", 'system');
-                console.error("N8N Chat Widget: Webhook URL is missing or default. Please update the N8N_WEBHOOK_URL variable.");
-                return;
-            }
-
-            // Prepare the payload for n8n
-            const payload = {
-                tenantId: TENANT_ID, // The hardcoded tenant ID for this client
-                message: message,
-                timestamp: new Date().toISOString(),
-                source: "N8NChatWidget",
-                // Add user information if available from the client's website
-                ...(currentUser.id && { userId: currentUser.id }),
-                ...(currentUser.name && { userName: currentUser.name }),
-                ...(currentUser.email && { userEmail: currentUser.email }),
-                // You can add more context here if needed, e.g.:
-                // userAgent: navigator.userAgent,
-                // pageUrl: window.location.href,
-                // referrer: document.referrer
-            };
-
-            addMessage("System: Sending message to agent...", 'system');
-            console.log('N8N Chat Widget: Sending payload to n8n:', payload);
-
-            try {
-                const response = await fetch(N8N_WEBHOOK_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // If your n8n webhook requires an API key in headers, add it here.
-                        // e.g., 'X-N8N-API-Key': 'your-secret-key'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    addMessage("System: Message sent to n8n successfully!", 'system');
-                    // OPTIONAL: If your n8n workflow is set up to return a response (e.g., an agent's reply)
-                    // You can parse it and display it in the chat:
-                    // const n8nAgentResponse = await response.json();
-                    // if (n8nAgentResponse && n8nAgentResponse.reply) {
-                    //     addMessage(`Agent: ${n8nAgentResponse.reply}`, 'agent');
-                    // }
-                } else {
-                    const errorText = await response.text();
-                    console.error('N8N Chat Widget: Failed to send webhook:', response.status, response.statusText, errorText);
-                    addMessage(`System: Failed to send message to agent (${response.status}: ${response.statusText}).`, 'system');
-                    if (response.status === 0) {
-                         addMessage("System: This might be a CORS error. Ensure your n8n webhook accepts requests from this origin.", 'system');
-                    }
-                }
-            } catch (error) {
-                console.error('N8N Chat Widget: Error sending webhook:', error);
-                addMessage(`System: An error occurred: ${error.message}.`, 'system');
-            }
-        }
-
-        // Event Listeners for chat input and send button
-        if (sendMessageButton && messageInput) {
-            sendMessageButton.addEventListener('click', sendMessage);
-            messageInput.addEventListener('keypress', function(event) {
-                if (event.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-        } else {
-            console.error("N8N Chat Widget: Chat input elements (messageInput or sendMessageButton) not found after injection.");
-        }
-
-        // Initial welcome message in the chat widget
-        let welcomeMessage = `System: Welcome to chat for ${TENANT_ID}!`;
-        if (currentUser.name) {
-            welcomeMessage += ` You are logged in as ${currentUser.name}.`;
-        }
-        welcomeMessage += ` How can we help you today?`;
-        addMessage(welcomeMessage, 'system');
-    </script>
-     <script>
-        // This script block should be added by the client, using their backend data
-        window.n8nChatWidgetUser = {
-            customer_id: "a1b2c3d4-0001-4000-8000-000000000001",
-            customer_name: "Maria",
-            customer_email: "maria.garcia@email.com"
-        };
-    </script>
-    <!-- End of N8N Chat Widget -->
-<!-- START N8N Multi-Tenant Chat Widget Embed Code -->
-
-<!--
-    Instructions for Client's Website:
-    1. Place this entire block just before the closing </body> tag.
-    2. REQUIRED: Replace "https://your-n8n-instance.com/webhook/your-unique-id" with your actual n8n Webhook URL.
-    3. REQUIRED: Replace "Client_Website_ABC" with the specific Tenant ID for *this* client's website.
-    4. OPTIONAL (but recommended for logged-in users):
-       Define 'window.n8nChatWidgetUser' BEFORE this script,
-       e.g., after a user logs in. This will send user details to n8n.
-       Example:
-       <script>
-           window.n8nChatWidgetUser = {
-               id: "user_12345",
-               name: "John Doe",
-               email: "john.doe@example.com"
-           };
-       </script>
--->
-
-<div id="n8n-chat-widget-root"></div>
+    <div class="scw-footer">Powered by AI Support</div>
+  </div>
+</div>
 
 <script>
-    // --- Configuration for THIS specific client's website ---
-    // IMPORTANT: Customize these two variables for EACH client website where you embed this script.
-    const N8N_WEBHOOK_URL = "https://gpixie.app.n8n.cloud/webhook-test/customer-support"; // REPLACE THIS with your actual n8n Webhook URL
-    const TENANT_ID = "JM20"; // REPLACE THIS with the specific tenant ID for this client
+(function() {
+  // ═══════════════════════════════════════════════════════
+  //  EMBED CONFIGURATION
+  //  When embedding as a <script> tag, these come from
+  //  data attributes. For this standalone HTML demo,
+  //  set them here:
+  // ═══════════════════════════════════════════════════════
+  const TENANT_ID  = "JM20";
+  const CONFIG_URL = "https://gpixie.app.n8n.cloud/webhook-test/customer-support";  // n8n config webhook
+  // ═══════════════════════════════════════════════════════
+  //  In production, your embed snippet looks like:
+  //
+  //  <script src="https://yourdomain.com/chat-widget.js"
+  //          data-tenant="barts-automotive"
+  //          data-config-url="https://n8n.sellsy.ai/webhook/config">
+  //  <\/script>
+  //
+  //  The script reads these via:
+  //  const el = document.currentScript;
+  //  const TENANT_ID = el.getAttribute('data-tenant');
+  //  const CONFIG_URL = el.getAttribute('data-config-url');
+  // ═══════════════════════════════════════════════════════
 
-    // --- User Information (to be provided by the client's website) ---
-    // The client's website should define window.n8nChatWidgetUser before this script runs.
-    const currentUser = window.n8nChatWidgetUser || {}; // Fallback to an empty object if not defined
+  // State
+  let config = null;
+  let isOpen = false;
+  let isLoading = false;
+  let configLoaded = false;
 
-    // --- Chat Widget HTML and CSS ---
-    // This entire block of HTML and CSS is injected into the 'n8n-chat-widget-root' div.
-    // For production, consider externalizing CSS to a .css file.
-    const chatWidgetContent = `
-        <style>
-            /* Basic styling for the chat widget - scoped as much as possible with specific IDs/classes */
-            #n8n-chat-widget-root {
-                /* Initial position and size of the widget */
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 350px;
-                height: 450px; /* Adjust as needed */
-                background-color: white;
-                border: 1px solid #e0e0e0;
-                border-radius: 10px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                display: flex;
-                flex-direction: column;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                font-size: 14px;
-                z-index: 10000; /* Ensure it's above most other content */
-                overflow: hidden;
-                box-sizing: border-box; /* Include padding/border in element's total width and height */
-            }
-            #n8n-chat-widget-header {
-                background-color: #007bff;
-                color: white;
-                padding: 10px 15px;
-                font-size: 1.1em;
-                font-weight: bold;
-                text-align: center;
-                flex-shrink: 0; /* Prevent header from shrinking */
-            }
-            #n8n-chat-widget-messages {
-                flex-grow: 1;
-                padding: 15px;
-                overflow-y: auto;
-                background-color: #f8f9fa;
-                border-bottom: 1px solid #eee;
-                display: flex;
-                flex-direction: column; /* Messages stack vertically */
-            }
-            .n8n-chat-message {
-                margin-bottom: 8px;
-                padding: 8px 12px;
-                border-radius: 8px;
-                max-width: 85%;
-                word-wrap: break-word;
-                line-height: 1.4;
-                box-sizing: border-box;
-            }
-            .n8n-chat-message.user {
-                background-color: #dcf8c6; /* Light green for user messages */
-                margin-left: auto; /* Push user message to the right */
-                text-align: right;
-                border-bottom-right-radius: 2px;
-            }
-            .n8n-chat-message.system {
-                background-color: #e0e0e0; /* Gray for system messages */
-                color: #555;
-                font-size: 0.85em;
-                text-align: left;
-                margin-right: auto;
-                border-bottom-left-radius: 2px;
-            }
-            .n8n-chat-message.agent { /* For replies from the n8n workflow / agent */
-                background-color: #ffffff;
-                border: 1px solid #e0e0e0;
-                margin-right: auto; /* Push agent message to the left */
-                text-align: left;
-                border-bottom-left-radius: 2px;
-            }
-            #n8n-chat-widget-input-area {
-                display: flex;
-                padding: 10px 15px;
-                border-top: 1px solid #eee;
-                background-color: #fcfcfc;
-                flex-shrink: 0; /* Prevent input area from shrinking */
-            }
-            #n8n-chat-widget-input {
-                flex-grow: 1;
-                border: 1px solid #ddd;
-                border-radius: 20px;
-                padding: 8px 12px;
-                margin-right: 10px;
-                font-size: 1em;
-                outline: none;
-                box-sizing: border-box;
-            }
-            #n8n-chat-widget-input:focus {
-                border-color: #007bff;
-                box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
-            }
-            #n8n-chat-widget-send-button {
-                background-color: #007bff;
-                color: white;
-                border: none;
-                border-radius: 20px;
-                padding: 8px 15px;
-                cursor: pointer;
-                font-size: 0.9em;
-                font-weight: 600;
-                transition: background-color 0.2s ease;
-                flex-shrink: 0;
-            }
-            #n8n-chat-widget-send-button:hover {
-                background-color: #0056b3;
-            }
-        </style>
-        <div id="n8n-chat-widget-container">
-            <div id="n8n-chat-widget-header">Chat with Us (${TENANT_ID})</div>
-            <div id="n8n-chat-widget-messages"></div>
-            <div id="n8n-chat-widget-input-area">
-                <input type="text" id="n8n-chat-widget-input" placeholder="Type your message..." />
-                <button id="n8n-chat-widget-send-button">Send</button>
-            </div>
-        </div>
-    `;
+  // DOM
+  const root     = document.getElementById('scw-root');
+  const toggle   = document.getElementById('scwToggle');
+  const win      = document.getElementById('scwWindow');
+  const msgs     = document.getElementById('scwMessages');
+  const input    = document.getElementById('scwInput');
+  const sendBtn  = document.getElementById('scwSend');
+  const typing   = document.getElementById('scwTyping');
+  const badge    = document.getElementById('scwBadge');
+  const avatar   = document.getElementById('scwAvatar');
+  const nameEl   = document.getElementById('scwName');
+  const onlineEl = document.getElementById('scwOnlineText');
+  const loading  = document.getElementById('scwLoading');
+  const errorEl  = document.getElementById('scwError');
+  const retryBtn = document.getElementById('scwRetry');
+  const bubLogo  = document.getElementById('scwBubbleLogo');
 
-    // Inject the widget HTML/CSS into the root div
-    const chatRoot = document.getElementById('n8n-chat-widget-root');
-    if (chatRoot) {
-        chatRoot.innerHTML = chatWidgetContent;
-    } else {
-        console.error("N8N Chat Widget: Root element #n8n-chat-widget-root not found. Make sure <div id='n8n-chat-widget-root'></div> exists in your HTML.");
+  // ─── Fetch tenant config from n8n ───
+  async function loadConfig() {
+    loading.classList.remove('hidden');
+    errorEl.classList.remove('show');
+
+    try {
+      const res = await fetch(CONFIG_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: TENANT_ID })
+      });
+
+      config = await res.json();
+
+      // If n8n returns an array, take the first item
+      if (Array.isArray(config)) config = config[0];
+
+      applyConfig(config);
+      configLoaded = true;
+
+      // Fade out loading
+      loading.classList.add('hidden');
+
+      // Show welcome message
+      if (config.welcome_message) {
+        addMessage(config.welcome_message, 'bot');
+      }
+
+    } catch (err) {
+      console.error('[ChatWidget] Config load failed:', err);
+      loading.classList.add('hidden');
+      errorEl.classList.add('show');
+
+      // Fallback — still usable with defaults
+      configLoaded = false;
+    }
+  }
+
+  // ─── Apply config to the UI ───
+  function applyConfig(c) {
+    // Colors
+    if (c.primary_color) {
+      root.style.setProperty('--scw-primary', c.primary_color);
+      // Auto-generate a slightly darker shade for hover
+      root.style.setProperty('--scw-primary-dark', darkenColor(c.primary_color, 15));
+    }
+    if (c.accent_color) {
+      root.style.setProperty('--scw-primary-dark', c.accent_color);
     }
 
-    // Get references to elements inside the widget (after they've been injected)
-    const chatMessages = document.getElementById('n8n-chat-widget-messages');
-    const messageInput = document.getElementById('n8n-chat-widget-input');
-    const sendMessageButton = document.getElementById('n8n-chat-widget-send-button');
-
-    // Function to add a message to the chat display
-    function addMessage(message, type = 'user') { // 'user', 'system', 'agent'
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('n8n-chat-message');
-        msgDiv.classList.add(type);
-        msgDiv.textContent = message;
-        chatMessages.appendChild(msgDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+    // Business name
+    if (c.business_name) {
+      nameEl.textContent = c.business_name;
+      avatar.textContent = c.business_name.charAt(0).toUpperCase();
     }
 
-    // Function to send message to n8n webhook
-    async function sendMessage() {
-        const message = messageInput.value.trim();
-        if (message === '') {
-            return; // Don't send empty messages
-        }
+    // Logo
+    if (c.logo_url) {
+      // Header avatar
+      avatar.innerHTML = '';
+      const img = document.createElement('img');
+      img.src = c.logo_url;
+      img.alt = c.business_name || 'Logo';
+      avatar.appendChild(img);
 
-        addMessage(message, 'user'); // Display user's message locally
-        messageInput.value = ''; // Clear input field
-
-        if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.includes('YOUR_N8N_WEBHOOK_URL_HERE')) {
-            addMessage("System: Webhook URL not configured. Message not sent.", 'system');
-            console.error("N8N Chat Widget: Webhook URL is missing or default. Please update the N8N_WEBHOOK_URL variable.");
-            return;
-        }
-
-        // Prepare the payload for n8n
-        const payload = {
-            tenantId: TENANT_ID, // The hardcoded tenant ID for this client
-            message: message,
-            timestamp: new Date().toISOString(),
-            source: "N8NChatWidget",
-            // Add user information if available from the client's website
-            ...(currentUser.customer_id && { userId: currentUser.customer_id }),
-            ...(currentUser.customer_name && { userName: currentUser.customer_name }),
-            ...(currentUser.customer_email && { userEmail: currentUser.customer_email }),
-            // You can add more context here if needed, e.g.:
-            // userAgent: navigator.userAgent,
-            // pageUrl: window.location.href,
-            // referrer: document.referrer
-        };
-
-        addMessage("System: Sending message to agent...", 'system');
-        console.log('N8N Chat Widget: Sending payload to n8n:', payload);
-
-        try {
-            const response = await fetch(N8N_WEBHOOK_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // If your n8n webhook requires an API key in headers, add it here.
-                    // e.g., 'X-N8N-API-Key': 'your-secret-key'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (response.ok) {
-                addMessage("System: Message sent to n8n successfully!", 'system');
-                // OPTIONAL: If your n8n workflow is set up to return a response (e.g., an agent's reply)
-                // You can parse it and display it in the chat:
-                // const n8nAgentResponse = await response.json();
-                // if (n8nAgentResponse && n8nAgentResponse.reply) {
-                //     addMessage(`Agent: ${n8nAgentResponse.reply}`, 'agent');
-                // }
-            } else {
-                const errorText = await response.text();
-                console.error('N8N Chat Widget: Failed to send webhook:', response.status, response.statusText, errorText);
-                addMessage(`System: Failed to send message to agent (${response.status}: ${response.statusText}).`, 'system');
-                if (response.status === 0) {
-                     addMessage("System: This might be a CORS error. Ensure your n8n webhook accepts requests from this origin.", 'system');
-                }
-            }
-        } catch (error) {
-            console.error('N8N Chat Widget: Error sending webhook:', error);
-            addMessage(`System: An error occurred: ${error.message}.`, 'system');
-        }
+      // Bubble logo
+      bubLogo.src = c.logo_url;
+      bubLogo.style.display = 'block';
     }
 
-    // Event Listeners for chat input and send button
-    if (sendMessageButton && messageInput) {
-        sendMessageButton.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        });
-    } else {
-        console.error("N8N Chat Widget: Chat input elements (messageInput or sendMessageButton) not found after injection.");
+    // Online text
+    if (c.online_text) {
+      onlineEl.textContent = 'Online · ' + c.online_text;
     }
+  }
 
-    // Initial welcome message in the chat widget
-    let welcomeMessage = `System: Welcome to chat for ${TENANT_ID}!`;
-    if (currentUser.name) {
-        welcomeMessage += ` You are logged in as ${currentUser.name}.`;
+  // ─── Color utility ───
+  function darkenColor(hex, percent) {
+    hex = hex.replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    const num = parseInt(hex, 16);
+    const r = Math.max(0, (num >> 16) - Math.round(2.55 * percent));
+    const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.round(2.55 * percent));
+    const b = Math.max(0, (num & 0x0000FF) - Math.round(2.55 * percent));
+    return '#' + (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
+  }
+
+  // ─── Toggle ───
+  toggle.addEventListener('click', function() {
+    isOpen = !isOpen;
+    win.classList.toggle('open', isOpen);
+    toggle.classList.toggle('open', isOpen);
+    badge.classList.remove('show');
+
+    if (isOpen) {
+      input.focus();
+      // Load config on first open (lazy load)
+      if (!configLoaded && !loading.classList.contains('hidden') === false) {
+        loadConfig();
+      }
     }
-    welcomeMessage += ` How can we help you today?`;
-    addMessage(welcomeMessage, 'system');
+  });
+
+  // Retry button
+  retryBtn.addEventListener('click', loadConfig);
+
+  // ─── Auto-resize ───
+  input.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+  });
+
+  // ─── Send on Enter ───
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  sendBtn.addEventListener('click', sendMessage);
+
+  // ─── Add message ───
+  function addMessage(text, sender) {
+    const div = document.createElement('div');
+    div.className = 'scw-msg ' + sender;
+    div.textContent = text;
+    msgs.insertBefore(div, typing);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // ─── Send to n8n ───
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text || isLoading) return;
+
+    addMessage(text, 'user');
+    input.value = '';
+    input.style.height = 'auto';
+
+    isLoading = true;
+    sendBtn.disabled = true;
+    typing.classList.add('show');
+    msgs.scrollTop = msgs.scrollHeight;
+
+    // Use the chat webhook from config, or fall back to a default
+    const chatUrl = (config && config.webhook_url)
+      ? config.webhook_url
+      : CONFIG_URL.replace('/config', '/chat');
+
+    try {
+      const res = await fetch(chatUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          identifier: config ? (config.tenant_id || TENANT_ID) : TENANT_ID,
+          systemPrompt: config ? (config.system_prompt || '') : ''
+        })
+      });
+
+      const data = await res.json();
+
+      // Parse various n8n response formats
+      let reply = '';
+      if (typeof data === 'string') reply = data;
+      else if (data.output) reply = data.output;
+      else if (data.message) reply = data.message;
+      else if (data.response) reply = data.response;
+      else if (data.text) reply = data.text;
+      else if (Array.isArray(data) && data.length > 0)
+        reply = data[0].output || data[0].message || data[0].text || JSON.stringify(data[0]);
+      else reply = JSON.stringify(data);
+
+      addMessage(reply, 'bot');
+
+      if (!isOpen) badge.classList.add('show');
+
+    } catch (err) {
+      console.error('[ChatWidget] Send error:', err);
+      addMessage("Sorry, I'm having trouble connecting. Please try again.", 'bot');
+    } finally {
+      isLoading = false;
+      sendBtn.disabled = false;
+      typing.classList.remove('show');
+    }
+  }
+
+  // ─── Init: load config on first open ───
+  // We lazy-load config when the user first opens the chat
+  // to avoid an API call if they never interact.
+  const originalToggle = toggle.onclick;
+  let firstOpen = true;
+
+  toggle.addEventListener('click', function() {
+    if (firstOpen) {
+      firstOpen = false;
+      loadConfig();
+    }
+  });
+
+})();
 </script>
-<!-- END N8N Multi-Tenant Chat Widget Embed Code -->
+
 </body>
 </html>
