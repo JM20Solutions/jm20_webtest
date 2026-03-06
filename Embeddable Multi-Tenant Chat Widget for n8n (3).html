@@ -1,0 +1,326 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Host Website (Example for N8N Chat Widget)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #007bff;
+        }
+        p {
+            margin-bottom: 1em;
+        }
+        .content-placeholder {
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-height: 300px;
+            margin-bottom: 50px; /* Space for the fixed chat widget */
+        }
+        .instruction-box {
+            background-color: #e6f7ff;
+            border-left: 5px solid #007bff;
+            padding: 15px;
+            margin-top: 20px;
+            color: #333;
+            font-size: 0.95em;
+        }
+        .instruction-box code {
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to Our Client Website!</h1>
+    <div class="content-placeholder">
+        <p>This is an example of a client's website content. Imagine this is your customer's actual webpage.</p>
+        <p>The chat widget on the bottom right is embedded directly into this page. It has its tenant ID hardcoded, specific to this client.</p>
+        <p>Feel free to interact with the chat to see how messages are sent to your n8n webhook along with the tenant information.</p>
+    </div>
+
+    <div class="instruction-box">
+        <h3>How to use this example:</h3>
+        <ol>
+            <li><strong>Save this file:</strong> Save the entire content of this document as <code>index.html</code>.</li>
+            <li><strong>Open in browser:</strong> Open the <code>index.html</code> file in your web browser.</li>
+            <li><strong>Get an n8n Webhook URL:</strong> In your n8n instance, create a new workflow. Add a "Webhook" node (choose "Catch Webhook"). Copy the "Webhook URL" it provides.</li>
+            <li><strong>Configure the widget:</strong> In the <code>&lt;script&gt;</code> block below, replace <code>"YOUR_N8N_WEBHOOK_URL_HERE"</code> with your actual n8n Webhook URL. Also, set the <code>TENANT_ID</code> to something meaningful like <code>"ClientA_Website"</code>.</li>
+            <li>
+                <strong>Expose User Information (Client's Website):</strong> For the chat widget to pick up user details, the client's website *must* define a global JavaScript object named <code>window.n8nChatWidgetUser</code> with the user's <code>id</code>, <code>name</code>, and <code>email</code>. This needs to be done *before* the chat widget script loads.
+                <pre><code>&lt;script&gt;
+    // Example: Dynamically populate these values after a user logs in on the client's site
+    window.n8nChatWidgetUser = {
+        id: "user_12345",
+        name: "John Doe",
+        email: "john.doe@example.com"
+    };
+&lt;/script&gt;
+&lt;!-- Then, your N8N Chat Widget embed code below --&gt;</code></pre>
+                If <code>window.n8nChatWidgetUser</code> is not set, or is missing properties, the chat will still function but without user-specific data in the payload.
+            </li>
+            <li><strong>Test:</strong> Type a message in the chat widget and click "Send". Check your n8n workflow – you should see the incoming webhook request containing your message, the <code>TENANT_ID</code>, and now also the <code>userId</code>, <code>userName</code>, and <code>userEmail</code> if configured.</li>
+            <li><strong>To embed on a real site:</strong> Copy everything from <code>&lt;div id="n8n-chat-widget-root"&gt;&lt;/div&gt;</code> to the closing <code>&lt;/script&gt;</code> tag and paste it just before the closing <code>&lt;/body&gt;</code> tag of your client's HTML page. Remember to customize <code>N8N_WEBHOOK_URL</code> and <code>TENANT_ID</code> for each client! And importantly, ensure the <code>window.n8nChatWidgetUser</code> object is set by the client's site for logged-in users.</li>
+        </ol>
+    </div>
+
+    <!-- The N8N Chat Widget starts here -->
+    <div id="n8n-chat-widget-root"></div>
+
+    <script>
+        // --- Configuration for THIS specific client's website ---
+        // IMPORTANT: Customize these two variables for EACH client website where you embed this script.
+        const N8N_WEBHOOK_URL = "https://your-n8n-instance.com/webhook/your-unique-id"; // REPLACE THIS with your actual n8n Webhook URL
+        const TENANT_ID = "Client_Website_ABC"; // REPLACE THIS with the specific tenant ID for this client
+
+        // --- User Information (to be provided by the client's website) ---
+        // The client's website should define window.n8nChatWidgetUser before this script runs.
+        const currentUser = window.n8nChatWidgetUser || {}; // Fallback to an empty object if not defined
+
+        // --- Chat Widget HTML and CSS ---
+        // This entire block of HTML and CSS is injected into the 'n8n-chat-widget-root' div.
+        // For production, consider externalizing CSS to a .css file.
+        const chatWidgetContent = `
+            <style>
+                /* Basic styling for the chat widget - scoped as much as possible with specific IDs/classes */
+                #n8n-chat-widget-root {
+                    /* Initial position and size of the widget */
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    width: 350px;
+                    height: 450px; /* Adjust as needed */
+                    background-color: white;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+                    display: flex;
+                    flex-direction: column;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-size: 14px;
+                    z-index: 10000; /* Ensure it's above most other content */
+                    overflow: hidden;
+                    box-sizing: border-box; /* Include padding/border in element's total width and height */
+                }
+                #n8n-chat-widget-header {
+                    background-color: #007bff;
+                    color: white;
+                    padding: 10px 15px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                    text-align: center;
+                    flex-shrink: 0; /* Prevent header from shrinking */
+                }
+                #n8n-chat-widget-messages {
+                    flex-grow: 1;
+                    padding: 15px;
+                    overflow-y: auto;
+                    background-color: #f8f9fa;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    flex-direction: column; /* Messages stack vertically */
+                }
+                .n8n-chat-message {
+                    margin-bottom: 8px;
+                    padding: 8px 12px;
+                    border-radius: 8px;
+                    max-width: 85%;
+                    word-wrap: break-word;
+                    line-height: 1.4;
+                    box-sizing: border-box;
+                }
+                .n8n-chat-message.user {
+                    background-color: #dcf8c6; /* Light green for user messages */
+                    margin-left: auto; /* Push user message to the right */
+                    text-align: right;
+                    border-bottom-right-radius: 2px;
+                }
+                .n8n-chat-message.system {
+                    background-color: #e0e0e0; /* Gray for system messages */
+                    color: #555;
+                    font-size: 0.85em;
+                    text-align: left;
+                    margin-right: auto;
+                    border-bottom-left-radius: 2px;
+                }
+                .n8n-chat-message.agent { /* For replies from the n8n workflow / agent */
+                    background-color: #ffffff;
+                    border: 1px solid #e0e0e0;
+                    margin-right: auto; /* Push agent message to the left */
+                    text-align: left;
+                    border-bottom-left-radius: 2px;
+                }
+                #n8n-chat-widget-input-area {
+                    display: flex;
+                    padding: 10px 15px;
+                    border-top: 1px solid #eee;
+                    background-color: #fcfcfc;
+                    flex-shrink: 0; /* Prevent input area from shrinking */
+                }
+                #n8n-chat-widget-input {
+                    flex-grow: 1;
+                    border: 1px solid #ddd;
+                    border-radius: 20px;
+                    padding: 8px 12px;
+                    margin-right: 10px;
+                    font-size: 1em;
+                    outline: none;
+                    box-sizing: border-box;
+                }
+                #n8n-chat-widget-input:focus {
+                    border-color: #007bff;
+                    box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+                }
+                #n8n-chat-widget-send-button {
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 20px;
+                    padding: 8px 15px;
+                    cursor: pointer;
+                    font-size: 0.9em;
+                    font-weight: 600;
+                    transition: background-color 0.2s ease;
+                    flex-shrink: 0;
+                }
+                #n8n-chat-widget-send-button:hover {
+                    background-color: #0056b3;
+                }
+            </style>
+            <div id="n8n-chat-widget-container">
+                <div id="n8n-chat-widget-header">Chat with Us (${TENANT_ID})</div>
+                <div id="n8n-chat-widget-messages"></div>
+                <div id="n8n-chat-widget-input-area">
+                    <input type="text" id="n8n-chat-widget-input" placeholder="Type your message..." />
+                    <button id="n8n-chat-widget-send-button">Send</button>
+                </div>
+            </div>
+        `;
+
+        // Inject the widget HTML/CSS into the root div
+        const chatRoot = document.getElementById('n8n-chat-widget-root');
+        if (chatRoot) {
+            chatRoot.innerHTML = chatWidgetContent;
+        } else {
+            console.error("N8N Chat Widget: Root element #n8n-chat-widget-root not found. Make sure <div id='n8n-chat-widget-root'></div> exists in your HTML.");
+        }
+
+        // Get references to elements inside the widget (after they've been injected)
+        const chatMessages = document.getElementById('n8n-chat-widget-messages');
+        const messageInput = document.getElementById('n8n-chat-widget-input');
+        const sendMessageButton = document.getElementById('n8n-chat-widget-send-button');
+
+        // Function to add a message to the chat display
+        function addMessage(message, type = 'user') { // 'user', 'system', 'agent'
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('n8n-chat-message');
+            msgDiv.classList.add(type);
+            msgDiv.textContent = message;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+        }
+
+        // Function to send message to n8n webhook
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message === '') {
+                return; // Don't send empty messages
+            }
+
+            addMessage(message, 'user'); // Display user's message locally
+            messageInput.value = ''; // Clear input field
+
+            if (!N8N_WEBHOOK_URL || N8N_WEBHOOK_URL.includes('YOUR_N8N_WEBHOOK_URL_HERE')) {
+                addMessage("System: Webhook URL not configured. Message not sent.", 'system');
+                console.error("N8N Chat Widget: Webhook URL is missing or default. Please update the N8N_WEBHOOK_URL variable.");
+                return;
+            }
+
+            // Prepare the payload for n8n
+            const payload = {
+                tenantId: TENANT_ID, // The hardcoded tenant ID for this client
+                message: message,
+                timestamp: new Date().toISOString(),
+                source: "N8NChatWidget",
+                // Add user information if available from the client's website
+                ...(currentUser.id && { userId: currentUser.id }),
+                ...(currentUser.name && { userName: currentUser.name }),
+                ...(currentUser.email && { userEmail: currentUser.email }),
+                // You can add more context here if needed, e.g.:
+                // userAgent: navigator.userAgent,
+                // pageUrl: window.location.href,
+                // referrer: document.referrer
+            };
+
+            addMessage("System: Sending message to agent...", 'system');
+            console.log('N8N Chat Widget: Sending payload to n8n:', payload);
+
+            try {
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // If your n8n webhook requires an API key in headers, add it here.
+                        // e.g., 'X-N8N-API-Key': 'your-secret-key'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    addMessage("System: Message sent to n8n successfully!", 'system');
+                    // OPTIONAL: If your n8n workflow is set up to return a response (e.g., an agent's reply)
+                    // You can parse it and display it in the chat:
+                    // const n8nAgentResponse = await response.json();
+                    // if (n8nAgentResponse && n8nAgentResponse.reply) {
+                    //     addMessage(`Agent: ${n8nAgentResponse.reply}`, 'agent');
+                    // }
+                } else {
+                    const errorText = await response.text();
+                    console.error('N8N Chat Widget: Failed to send webhook:', response.status, response.statusText, errorText);
+                    addMessage(`System: Failed to send message to agent (${response.status}: ${response.statusText}).`, 'system');
+                    if (response.status === 0) {
+                         addMessage("System: This might be a CORS error. Ensure your n8n webhook accepts requests from this origin.", 'system');
+                    }
+                }
+            } catch (error) {
+                console.error('N8N Chat Widget: Error sending webhook:', error);
+                addMessage(`System: An error occurred: ${error.message}.`, 'system');
+            }
+        }
+
+        // Event Listeners for chat input and send button
+        if (sendMessageButton && messageInput) {
+            sendMessageButton.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        } else {
+            console.error("N8N Chat Widget: Chat input elements (messageInput or sendMessageButton) not found after injection.");
+        }
+
+        // Initial welcome message in the chat widget
+        let welcomeMessage = `System: Welcome to chat for ${TENANT_ID}!`;
+        if (currentUser.name) {
+            welcomeMessage += ` You are logged in as ${currentUser.name}.`;
+        }
+        welcomeMessage += ` How can we help you today?`;
+        addMessage(welcomeMessage, 'system');
+    </script>
+    <!-- End of N8N Chat Widget -->
+
+</body>
+</html>
