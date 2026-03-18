@@ -1,0 +1,1048 @@
+{
+  "name": "Universal AI Database Agent — Portable v1.0",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111101",
+      "name": "📱 Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [-1400, 300],
+      "webhookId": "universal-db-agent-v1",
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CRED_ID",
+          "name": "Telegram Bot API"
+        }
+      },
+      "notes": "Replace TELEGRAM_CRED_ID with your Telegram Bot credential ID"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-001",
+              "name": "user_phone",
+              "value": "={{ $json.message.from.id.toString() }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-002",
+              "name": "user_query",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-003",
+              "name": "chat_id",
+              "value": "={{ $json.message.chat.id.toString() }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-004",
+              "name": "from_name",
+              "value": "={{ ($json.message.from.first_name || '') + ' ' + ($json.message.from.last_name || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "assign-005",
+              "name": "message_id",
+              "value": "={{ $json.message.message_id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111102",
+      "name": "📥 Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1180, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT mc.user_phone, mc.user_email, mc.client_id, mc.client_name, mc.db_type, mc.db_config::text as db_config, mc.api_key, mc.is_active FROM master_clients mc WHERE mc.user_phone = '{{ $json.user_phone }}' AND mc.is_active = true LIMIT 1",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111103",
+      "name": "🔍 Lookup User",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-960, 300],
+      "credentials": {
+        "postgres": {
+          "id": "MASTER_POSTGRES_CRED_ID",
+          "name": "Master Control DB"
+        }
+      },
+      "notes": "This is your CONTROL database. Create a Postgres credential named 'Master Control DB' pointing to the server that holds master_clients table."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-001",
+              "leftValue": "={{ $json.client_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111104",
+      "name": "✅ User Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-740, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('📥 Extract Message Data').item.json.chat_id }}",
+        "text": "❌ <b>Access Denied</b>\n\nSorry, your account is not registered in our system.\n\n📞 Your ID: <code>{{ $('📥 Extract Message Data').item.json.user_phone }}</code>\n\nPlease contact support to get access.",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "reply_to_message_id": "={{ $('📥 Extract Message Data').item.json.message_id }}"
+        }
+      },
+      "id": "11111111-1111-1111-1111-111111111105",
+      "name": "⛔ Not Registered Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [-520, 560],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CRED_ID",
+          "name": "Telegram Bot API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ctx-001",
+              "name": "client_id",
+              "value": "={{ $json.client_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-002",
+              "name": "client_name",
+              "value": "={{ $json.client_name }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-003",
+              "name": "db_type",
+              "value": "={{ $json.db_type }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-004",
+              "name": "db_config",
+              "value": "={{ JSON.parse($json.db_config) }}",
+              "type": "object"
+            },
+            {
+              "id": "ctx-005",
+              "name": "api_key",
+              "value": "={{ $json.api_key }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-006",
+              "name": "user_email",
+              "value": "={{ $json.user_email }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-007",
+              "name": "user_query",
+              "value": "={{ $('📥 Extract Message Data').item.json.user_query }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-008",
+              "name": "chat_id",
+              "value": "={{ $('📥 Extract Message Data').item.json.chat_id }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-009",
+              "name": "from_name",
+              "value": "={{ $('📥 Extract Message Data').item.json.from_name }}",
+              "type": "string"
+            },
+            {
+              "id": "ctx-010",
+              "name": "message_id",
+              "value": "={{ $('📥 Extract Message Data').item.json.message_id }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111106",
+      "name": "🎯 Prepare Client Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-520, 300]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "rules": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "sr-01", "leftValue": "={{ $json.db_type }}", "rightValue": "mysql", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "MySQL"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "sr-02", "leftValue": "={{ $json.db_type }}", "rightValue": "postgres", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Postgres"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "sr-03", "leftValue": "={{ $json.db_type }}", "rightValue": "mssql", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "MSSQL"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "sr-04", "leftValue": "={{ $json.db_type }}", "rightValue": "airtable", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Airtable"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "sr-05", "leftValue": "={{ $json.db_type }}", "rightValue": "google-sheets", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Google Sheets"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "sr-06", "leftValue": "={{ $json.db_type }}", "rightValue": "bigquery", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BigQuery"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "sr-07", "leftValue": "={{ $json.db_type }}", "rightValue": "supabase", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Supabase"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111107",
+      "name": "🔀 Schema Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [-300, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT TABLE_NAME as table_name, COLUMN_NAME as column_name, DATA_TYPE as data_type, IS_NULLABLE as is_nullable, COLUMN_KEY as column_key, COLUMN_DEFAULT as column_default FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '{{ $json.db_config.database || $json.db_config.db }}' ORDER BY TABLE_NAME, ORDINAL_POSITION",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111108",
+      "name": "🗄️ Schema MySQL",
+      "type": "n8n-nodes-base.mysql",
+      "typeVersion": 2.4,
+      "position": [-80, -520],
+      "credentials": {
+        "mySql": {
+          "id": "MYSQL_CLIENT_CRED_PLACEHOLDER",
+          "name": "{{ $json.client_id }}_mysql"
+        }
+      },
+      "notes": "Create MySQL credentials named '{client_id}_mysql' e.g. 'acme_mysql'. The credential connects to the client's MySQL server."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT table_name, column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = '{{ $json.db_config.schema || $json.db_config.database || \"public\" }}' AND table_catalog = '{{ $json.db_config.database || $json.db_config.db }}' ORDER BY table_name, ordinal_position",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111109",
+      "name": "🗄️ Schema Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-80, -320],
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CLIENT_CRED_PLACEHOLDER",
+          "name": "{{ $json.client_id }}_postgres"
+        }
+      },
+      "notes": "Create Postgres credentials named '{client_id}_postgres' e.g. 'beta_postgres'."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT TABLE_NAME as table_name, COLUMN_NAME as column_name, DATA_TYPE as data_type, IS_NULLABLE as is_nullable FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_CATALOG = '{{ $json.db_config.database || $json.db_config.db }}' AND TABLE_SCHEMA = '{{ $json.db_config.schema || \"dbo\" }}' ORDER BY TABLE_NAME, ORDINAL_POSITION",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111110",
+      "name": "🗄️ Schema MSSQL",
+      "type": "n8n-nodes-base.mssql",
+      "typeVersion": 1,
+      "position": [-80, -120],
+      "credentials": {
+        "msSql": {
+          "id": "MSSQL_CLIENT_CRED_PLACEHOLDER",
+          "name": "{{ $json.client_id }}_mssql"
+        }
+      },
+      "notes": "Create MSSQL credentials named '{client_id}_mssql'."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/meta/bases/{{ $json.db_config.baseId }}/tables",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "☁️ Schema Airtable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 80]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.db_config.sheetId }}?fields=sheets.properties",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111112",
+      "name": "📊 Schema Google Sheets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 280],
+      "notes": "api_key in master_clients should be a Google OAuth2 access token or service account token with Sheets read access"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://bigquery.googleapis.com/bigquery/v2/projects/{{ $json.db_config.projectId }}/queries",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "=SELECT table_name, column_name, data_type, is_nullable FROM `{{ $json.db_config.projectId }}.{{ $json.db_config.dataset }}.INFORMATION_SCHEMA.COLUMNS` ORDER BY table_name, ordinal_position"
+            },
+            {
+              "name": "useLegacySql",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111113",
+      "name": "🔵 Schema BigQuery",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 480]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.db_config.url }}/rest/v1/?apikey={{ $json.api_key }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.api_key }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111114",
+      "name": "⚡ Schema Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 680],
+      "notes": "Fetches Supabase PostgREST OpenAPI spec which contains all table/column definitions"
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "output": "input1",
+        "numberInputs": 7
+      },
+      "id": "11111111-1111-1111-1111-111111111115",
+      "name": "🔗 Merge Schema Branches",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [160, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// NORMALIZE SCHEMA — Converts any DB schema to standard format\n// ============================================================\nconst items = $input.all();\nconst ctx = $('🎯 Prepare Client Context').item.json;\nconst dbType = ctx.db_type;\nconst dbConfig = ctx.db_config;\n\nlet schema = [];\n\ntry {\n  if (dbType === 'mysql' || dbType === 'postgres' || dbType === 'mssql') {\n    // SQL databases return rows directly from INFORMATION_SCHEMA\n    schema = items.map(item => ({\n      table_name: (item.json.table_name || item.json.TABLE_NAME || '').toLowerCase(),\n      column_name: (item.json.column_name || item.json.COLUMN_NAME || '').toLowerCase(),\n      data_type: item.json.data_type || item.json.DATA_TYPE || 'unknown',\n      is_nullable: item.json.is_nullable || item.json.IS_NULLABLE || 'YES',\n      column_key: item.json.column_key || item.json.COLUMN_KEY || ''\n    }));\n\n  } else if (dbType === 'airtable') {\n    // Airtable returns { tables: [{ name, fields: [{ name, type }] }] }\n    const tables = items[0]?.json?.tables || [];\n    tables.forEach(table => {\n      (table.fields || []).forEach(field => {\n        schema.push({\n          table_name: table.name,\n          column_name: field.name,\n          data_type: field.type,\n          is_nullable: 'YES',\n          column_key: field.id\n        });\n      });\n    });\n\n  } else if (dbType === 'google-sheets') {\n    // Google Sheets returns sheet properties; we also need to read first row for headers\n    // db_config.tab = sheet tab name, db_config.headers = known headers array (optional)\n    const sheets = items[0]?.json?.sheets || [];\n    const targetTab = dbConfig.tab || sheets[0]?.properties?.title || 'Sheet1';\n    const headers = dbConfig.headers || ['id', 'name', 'status', 'date', 'amount'];\n    headers.forEach(header => {\n      schema.push({\n        table_name: targetTab,\n        column_name: header,\n        data_type: 'string',\n        is_nullable: 'YES',\n        column_key: ''\n      });\n    });\n\n  } else if (dbType === 'bigquery') {\n    // BigQuery returns { rows: [[val1, val2, ...]], schema: { fields: [...] } }\n    const bqResult = items[0]?.json;\n    const fields = bqResult?.schema?.fields || [];\n    const rows = bqResult?.rows || [];\n    rows.forEach(row => {\n      const vals = row.f || [];\n      schema.push({\n        table_name: vals[0]?.v || '',\n        column_name: vals[1]?.v || '',\n        data_type: vals[2]?.v || 'STRING',\n        is_nullable: vals[3]?.v === 'YES' ? 'YES' : 'NO',\n        column_key: ''\n      });\n    });\n\n  } else if (dbType === 'supabase') {\n    // Supabase PostgREST OpenAPI: definitions object\n    const definitions = items[0]?.json?.definitions || {};\n    Object.entries(definitions).forEach(([tableName, tableDef]) => {\n      const properties = tableDef.properties || {};\n      Object.entries(properties).forEach(([colName, colDef]) => {\n        schema.push({\n          table_name: tableName,\n          column_name: colName,\n          data_type: colDef.type || colDef.format || 'unknown',\n          is_nullable: 'YES',\n          column_key: colDef.description?.includes('pkey') ? 'PRI' : ''\n        });\n      });\n    });\n  }\n} catch (err) {\n  schema = [{ table_name: 'unknown', column_name: 'error', data_type: err.message, is_nullable: 'YES', column_key: '' }];\n}\n\n// Group by table for readable schema text\nconst tableMap = {};\nschema.forEach(col => {\n  const tbl = col.table_name;\n  if (!tableMap[tbl]) tableMap[tbl] = [];\n  const pk = col.column_key === 'PRI' ? ' [PK]' : '';\n  const nullable = col.is_nullable === 'NO' ? ' NOT NULL' : '';\n  tableMap[tbl].push(`${col.column_name} (${col.data_type}${pk}${nullable})`);\n});\n\nconst schemaText = Object.entries(tableMap)\n  .map(([table, cols]) => `TABLE ${table}:\\n  ${cols.join('\\n  ')}`)\n  .join('\\n\\n');\n\nreturn [{\n  json: {\n    ...ctx,\n    live_schema: schemaText,\n    schema_raw: schema,\n    schema_tables: Object.keys(tableMap),\n    schema_table_count: Object.keys(tableMap).length,\n    schema_column_count: schema.length\n  }\n}];\n"
+      },
+      "id": "11111111-1111-1111-1111-111111111116",
+      "name": "🔧 Normalize Schema",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [380, 80]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "prompt-001",
+              "name": "ai_system_prompt",
+              "value": "You are a Universal Database Agent. Your job is to translate natural language user requests into safe, read/write database queries for the exact database type specified.\n\nRULES:\n1. Generate ONLY the query type requested (SELECT for lookups, UPDATE for changes, INSERT for new records, DELETE only if explicitly confirmed)\n2. Always use parameterized queries where possible\n3. NEVER drop tables, truncate, or run DDL statements\n4. Limit SELECT results to 50 rows maximum unless user asks for all\n5. Return ONLY valid JSON — no explanations outside the JSON block\n\nDB-SPECIFIC SYNTAX:\n- MySQL: Use LIMIT, CONCAT(), IFNULL(), DATE_FORMAT(), backtick identifiers\n- Postgres: Use LIMIT, ILIKE, || for concat, COALESCE(), double-quote identifiers\n- MSSQL: Use TOP, ISNULL(), + for concat, square bracket identifiers\n- Airtable: Use filterByFormula, sort, maxRecords params as JSON\n- Google Sheets: Use A1 notation ranges, valueRenderOption\n- BigQuery: Use Standard SQL, backtick project.dataset.table notation, LIMIT\n- Supabase: Use PostgREST query params (select, eq, order, limit)\n\nOUTPUT FORMAT (strict JSON only):\n{\n  \"query\": \"the actual query string or API params\",\n  \"params\": [\"param1\", \"param2\"],\n  \"response_template\": \"Human readable template with {{field_name}} placeholders\",\n  \"explanation\": \"One sentence what this query does\",\n  \"safe\": true,\n  \"operation\": \"SELECT|UPDATE|INSERT|DELETE|API_READ|API_WRITE\"\n}",
+              "type": "string"
+            },
+            {
+              "id": "prompt-002",
+              "name": "ai_user_prompt",
+              "value": "=CLIENT ID: {{ $json.client_id }}\nCLIENT NAME: {{ $json.client_name }}\nDB TYPE: {{ $json.db_type }}\nDB CONFIG: {{ JSON.stringify($json.db_config) }}\n\nLIVE DATABASE SCHEMA:\n{{ $json.live_schema }}\n\nUSER REQUEST: \"{{ $json.user_query }}\"\nUSER NAME: {{ $json.from_name }}\n\nGenerate the appropriate {{ $json.db_type }} query/operation for this request. Use the EXACT table and column names from the schema above.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111117",
+      "name": "📝 Build AI Prompt",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [600, 80]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $credentials.httpHeaderAuth.value }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 1024,\n  \"system\": {{ JSON.stringify($json.ai_system_prompt) }},\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify($json.ai_user_prompt) }}\n    }\n  ]\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "id": "11111111-1111-1111-1111-111111111118",
+      "name": "🤖 Claude AI Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 80],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "ANTHROPIC_CRED_ID",
+          "name": "Anthropic API Key"
+        }
+      },
+      "notes": "Create HTTP Header Auth credential: Header Name = 'x-api-key', Value = your Anthropic API key (sk-ant-...)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// PARSE AI RESPONSE — Extract structured JSON from Claude\n// ============================================================\nconst response = $input.first().json;\nconst ctx = $('📝 Build AI Prompt').item.json;\n\n// Extract text from Anthropic API response format\nlet responseText = '';\nif (response.content && Array.isArray(response.content)) {\n  responseText = response.content.map(block => block.text || '').join('');\n} else if (response.message?.content) {\n  responseText = response.message.content;\n} else if (typeof response === 'string') {\n  responseText = response;\n}\n\nif (!responseText) {\n  throw new Error('Empty response from Claude API. Check your API key and model name.');\n}\n\n// Parse JSON from response (handle markdown code blocks)\nlet parsed;\ntry {\n  // 1. Try direct JSON parse\n  parsed = JSON.parse(responseText.trim());\n} catch (e1) {\n  try {\n    // 2. Extract from ```json ... ``` block\n    const jsonBlockMatch = responseText.match(/```(?:json)?\\s*([\\s\\S]*?)\\s*```/);\n    if (jsonBlockMatch) {\n      parsed = JSON.parse(jsonBlockMatch[1]);\n    } else {\n      // 3. Extract first JSON object\n      const objectMatch = responseText.match(/\\{[\\s\\S]*\\}/);\n      if (objectMatch) {\n        parsed = JSON.parse(objectMatch[0]);\n      } else {\n        throw new Error('No JSON found in Claude response: ' + responseText.substring(0, 200));\n      }\n    }\n  } catch (e2) {\n    throw new Error('Failed to parse Claude response as JSON: ' + e2.message);\n  }\n}\n\n// Validate required fields\nif (!parsed.query) {\n  throw new Error('Claude response missing required \"query\" field');\n}\n\nreturn [{\n  json: {\n    // Carry forward all context\n    ...ctx,\n    // AI generated fields\n    ai_query: parsed.query,\n    ai_params: parsed.params || [],\n    response_template: parsed.response_template || 'Found {{count}} results for your request.',\n    ai_explanation: parsed.explanation || '',\n    ai_safe: parsed.safe !== false,\n    ai_operation: parsed.operation || 'SELECT',\n    // Raw for debugging\n    _raw_ai_response: responseText\n  }\n}];\n"
+      },
+      "id": "11111111-1111-1111-1111-111111111119",
+      "name": "🔍 Parse AI Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 80]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "rules": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "qr-01", "leftValue": "={{ $json.db_type }}", "rightValue": "mysql", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "MySQL"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "qr-02", "leftValue": "={{ $json.db_type }}", "rightValue": "postgres", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Postgres"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "qr-03", "leftValue": "={{ $json.db_type }}", "rightValue": "mssql", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "MSSQL"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "qr-04", "leftValue": "={{ $json.db_type }}", "rightValue": "airtable", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Airtable"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "qr-05", "leftValue": "={{ $json.db_type }}", "rightValue": "google-sheets", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Google Sheets"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "qr-06", "leftValue": "={{ $json.db_type }}", "rightValue": "bigquery", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "BigQuery"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+                "conditions": [{ "id": "qr-07", "leftValue": "={{ $json.db_type }}", "rightValue": "supabase", "operator": { "type": "string", "operation": "equals" } }],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Supabase"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111120",
+      "name": "🔀 Query Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1260, 80]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.ai_query }}",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111121",
+      "name": "⚡ Execute MySQL",
+      "type": "n8n-nodes-base.mysql",
+      "typeVersion": 2.4,
+      "position": [1480, -520],
+      "credentials": {
+        "mySql": {
+          "id": "MYSQL_CLIENT_CRED_PLACEHOLDER",
+          "name": "{{ $json.client_id }}_mysql"
+        }
+      },
+      "notes": "Uses same credential as Schema MySQL. Named '{client_id}_mysql'."
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.ai_query }}",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111122",
+      "name": "⚡ Execute Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1480, -320],
+      "credentials": {
+        "postgres": {
+          "id": "POSTGRES_CLIENT_CRED_PLACEHOLDER",
+          "name": "{{ $json.client_id }}_postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.ai_query }}",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111123",
+      "name": "⚡ Execute MSSQL",
+      "type": "n8n-nodes-base.mssql",
+      "typeVersion": 1,
+      "position": [1480, -120],
+      "credentials": {
+        "msSql": {
+          "id": "MSSQL_CLIENT_CRED_PLACEHOLDER",
+          "name": "{{ $json.client_id }}_mssql"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "=GET",
+        "url": "=https://api.airtable.com/v0/{{ $json.db_config.baseId }}/{{ encodeURIComponent($json.db_config.table || 'Orders') }}{{ $json.ai_query.startsWith('?') ? $json.ai_query : '' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "id": "11111111-1111-1111-1111-111111111124",
+      "name": "⚡ Execute Airtable",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 80],
+      "notes": "For Airtable, ai_query should be URL query params like: ?filterByFormula=...&maxRecords=10"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.db_config.sheetId }}/values/{{ encodeURIComponent($json.db_config.tab || 'Sheet1') }}!{{ $json.ai_query || 'A1:Z1000' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false
+            }
+          }
+        }
+      },
+      "id": "11111111-1111-1111-1111-111111111125",
+      "name": "⚡ Execute Google Sheets",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 280],
+      "notes": "For Google Sheets, ai_query should be A1 notation range like: A1:G50 or A:Z"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://bigquery.googleapis.com/bigquery/v2/projects/{{ $json.db_config.projectId }}/queries",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ query: $json.ai_query, useLegacySql: false, maxResults: 100, timeoutMs: 30000 }) }}",
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111126",
+      "name": "⚡ Execute BigQuery",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 480]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.db_config.url }}/rest/v1/{{ $json.ai_query.startsWith('/') ? $json.ai_query.substring(1) : $json.ai_query }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.api_key }}"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $json.api_key }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "11111111-1111-1111-1111-111111111127",
+      "name": "⚡ Execute Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 680],
+      "notes": "For Supabase, ai_query should be PostgREST path+params like: orders?status=eq.pending&select=id,status,total&limit=10"
+    },
+    {
+      "parameters": {
+        "mode": "passThrough",
+        "output": "input1",
+        "numberInputs": 7
+      },
+      "id": "11111111-1111-1111-1111-111111111128",
+      "name": "🔗 Merge Results",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1700, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n// FORMAT RESPONSE — Build human-readable Telegram message\n// ============================================================\nconst resultItems = $input.all();\nconst ctx = $('🔍 Parse AI Response').item.json;\n\nlet responseText = '';\nconst recordCount = resultItems.length;\nconst dbType = ctx.db_type;\nlet template = ctx.response_template || '';\n\ntry {\n  if (recordCount === 0) {\n    responseText = `✅ <b>Request Complete</b>\\n\\nNo matching records found for: \"${ctx.user_query}\"\\n\\n<i>${ctx.ai_explanation || ''}</i>`;\n\n  } else if (dbType === 'airtable') {\n    // Airtable returns { records: [{ id, fields: {...} }] }\n    const records = resultItems[0]?.json?.records || resultItems;\n    const count = Array.isArray(resultItems[0]?.json?.records) ? resultItems[0].json.records.length : recordCount;\n\n    if (template && !template.includes('{{count}}') && count === 1) {\n      const fields = records[0]?.json?.fields || records[0]?.json || {};\n      let filled = template;\n      Object.entries(fields).forEach(([k, v]) => {\n        filled = filled.replace(new RegExp(`\\\\{\\\\{${k}\\\\}\\\\}`, 'gi'), v ?? 'N/A');\n      });\n      filled = filled.replace(/\\{\\{\\w+\\}\\}/g, 'N/A');\n      responseText = `✅ ${filled}`;\n    } else {\n      responseText = `✅ <b>Found ${count} record(s)</b>\\n\\n`;\n      const displayRecords = Array.isArray(records[0]?.json?.records) ? records[0].json.records.slice(0, 5) : records.slice(0, 5);\n      displayRecords.forEach((rec, i) => {\n        const fields = rec.fields || rec.json?.fields || rec.json || {};\n        responseText += `<b>${i + 1}.</b> `;\n        const firstFew = Object.entries(fields).slice(0, 4);\n        responseText += firstFew.map(([k, v]) => `${k}: <code>${v}</code>`).join(' | ');\n        responseText += '\\n';\n      });\n      if (count > 5) responseText += `<i>...and ${count - 5} more</i>`;\n    }\n\n  } else if (dbType === 'google-sheets') {\n    // Google Sheets returns { values: [[row1col1, ...], [row2col1, ...]] }\n    const sheetData = resultItems[0]?.json;\n    const values = sheetData?.values || [];\n    const headers = values[0] || [];\n    const dataRows = values.slice(1);\n\n    if (dataRows.length === 0) {\n      responseText = `✅ No data found matching your request.`;\n    } else if (template && dataRows.length === 1) {\n      const rowObj = {};\n      headers.forEach((h, i) => { rowObj[h] = dataRows[0][i] || ''; });\n      let filled = template;\n      Object.entries(rowObj).forEach(([k, v]) => {\n        filled = filled.replace(new RegExp(`\\\\{\\\\{${k}\\\\}\\\\}`, 'gi'), v);\n      });\n      responseText = `✅ ${filled}`;\n    } else {\n      responseText = `✅ <b>Found ${dataRows.length} row(s)</b>\\n\\n`;\n      dataRows.slice(0, 5).forEach((row, i) => {\n        responseText += `<b>${i + 1}.</b> `;\n        const pairs = headers.slice(0, 4).map((h, j) => `${h}: <code>${row[j] || ''}</code>`);\n        responseText += pairs.join(' | ') + '\\n';\n      });\n      if (dataRows.length > 5) responseText += `<i>...and ${dataRows.length - 5} more</i>`;\n    }\n\n  } else if (dbType === 'bigquery') {\n    // BigQuery returns { schema: { fields }, rows: [{ f: [{ v }] }] }\n    const bqData = resultItems[0]?.json;\n    const fields = bqData?.schema?.fields || [];\n    const rows = bqData?.rows || [];\n\n    if (rows.length === 0) {\n      responseText = `✅ Query returned no results.`;\n    } else if (template && rows.length === 1) {\n      const rowObj = {};\n      fields.forEach((f, i) => { rowObj[f.name] = rows[0].f?.[i]?.v || ''; });\n      let filled = template;\n      Object.entries(rowObj).forEach(([k, v]) => {\n        filled = filled.replace(new RegExp(`\\\\{\\\\{${k}\\\\}\\\\}`, 'gi'), v);\n      });\n      responseText = `✅ ${filled}`;\n    } else {\n      responseText = `✅ <b>Found ${rows.length} result(s)</b>\\n\\n`;\n      rows.slice(0, 5).forEach((row, i) => {\n        responseText += `<b>${i + 1}.</b> `;\n        const pairs = fields.slice(0, 4).map((f, j) => `${f.name}: <code>${row.f?.[j]?.v || ''}</code>`);\n        responseText += pairs.join(' | ') + '\\n';\n      });\n      if (rows.length > 5) responseText += `<i>...and ${rows.length - 5} more</i>`;\n    }\n\n  } else {\n    // SQL databases (MySQL, Postgres, MSSQL) + Supabase — return plain row objects\n    if (template && recordCount === 1) {\n      const row = resultItems[0].json;\n      let filled = template;\n      Object.entries(row).forEach(([k, v]) => {\n        filled = filled.replace(new RegExp(`\\\\{\\\\{${k}\\\\}\\\\}`, 'gi'), v ?? 'N/A');\n      });\n      filled = filled.replace(/\\{\\{\\w+\\}\\}/g, 'N/A');\n      responseText = `✅ ${filled}`;\n    } else if (recordCount === 1) {\n      responseText = `✅ <b>Result</b>\\n\\n`;\n      const row = resultItems[0].json;\n      Object.entries(row).slice(0, 8).forEach(([k, v]) => {\n        responseText += `• <b>${k.replace(/_/g, ' ').toUpperCase()}</b>: <code>${v ?? 'N/A'}</code>\\n`;\n      });\n    } else {\n      responseText = `✅ <b>Found ${recordCount} record(s)</b>\\n\\n`;\n      resultItems.slice(0, 5).forEach((item, i) => {\n        const row = item.json;\n        responseText += `<b>${i + 1}.</b> `;\n        const firstFour = Object.entries(row).slice(0, 4);\n        responseText += firstFour.map(([k, v]) => `${k}: <code>${v ?? ''}</code>`).join(' | ');\n        responseText += '\\n';\n      });\n      if (recordCount > 5) responseText += `<i>...and ${recordCount - 5} more</i>`;\n    }\n  }\n\n  // Add operation footer\n  if (ctx.ai_operation && !['SELECT', 'API_READ'].includes(ctx.ai_operation)) {\n    responseText += `\\n\\n<i>Operation: ${ctx.ai_operation}</i>`;\n  }\n\n} catch (err) {\n  responseText = `⚠️ <b>Processing Error</b>\\n\\nRetrieved data but couldn't format it.\\nError: ${err.message}`;\n}\n\nreturn [{\n  json: {\n    chat_id: ctx.chat_id,\n    message_id: ctx.message_id,\n    response_text: responseText,\n    from_name: ctx.from_name,\n    client_id: ctx.client_id,\n    record_count: recordCount,\n    db_type: dbType\n  }\n}];\n"
+      },
+      "id": "11111111-1111-1111-1111-111111111129",
+      "name": "📋 Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1920, 80]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.response_text }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "reply_to_message_id": "={{ $json.message_id }}"
+        }
+      },
+      "id": "11111111-1111-1111-1111-111111111130",
+      "name": "📤 Send Telegram Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [2140, 80],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_CRED_ID",
+          "name": "Telegram Bot API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "📱 Telegram Trigger": {
+      "main": [
+        [{ "node": "📥 Extract Message Data", "type": "main", "index": 0 }]
+      ]
+    },
+    "📥 Extract Message Data": {
+      "main": [
+        [{ "node": "🔍 Lookup User", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔍 Lookup User": {
+      "main": [
+        [{ "node": "✅ User Found?", "type": "main", "index": 0 }]
+      ]
+    },
+    "✅ User Found?": {
+      "main": [
+        [{ "node": "🎯 Prepare Client Context", "type": "main", "index": 0 }],
+        [{ "node": "⛔ Not Registered Reply", "type": "main", "index": 0 }]
+      ]
+    },
+    "🎯 Prepare Client Context": {
+      "main": [
+        [{ "node": "🔀 Schema Router", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔀 Schema Router": {
+      "main": [
+        [{ "node": "🗄️ Schema MySQL", "type": "main", "index": 0 }],
+        [{ "node": "🗄️ Schema Postgres", "type": "main", "index": 0 }],
+        [{ "node": "🗄️ Schema MSSQL", "type": "main", "index": 0 }],
+        [{ "node": "☁️ Schema Airtable", "type": "main", "index": 0 }],
+        [{ "node": "📊 Schema Google Sheets", "type": "main", "index": 0 }],
+        [{ "node": "🔵 Schema BigQuery", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Schema Supabase", "type": "main", "index": 0 }]
+      ]
+    },
+    "🗄️ Schema MySQL": {
+      "main": [
+        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 0 }]
+      ]
+    },
+    "🗄️ Schema Postgres": {
+      "main": [
+        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 1 }]
+      ]
+    },
+    "🗄️ Schema MSSQL": {
+      "main": [
+        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 2 }]
+      ]
+    },
+    "☁️ Schema Airtable": {
+      "main": [
+        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 3 }]
+      ]
+    },
+    "📊 Schema Google Sheets": {
+      "main": [
+        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 4 }]
+      ]
+    },
+    "🔵 Schema BigQuery": {
+      "main": [
+        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 5 }]
+      ]
+    },
+    "⚡ Schema Supabase": {
+      "main": [
+        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 6 }]
+      ]
+    },
+    "🔗 Merge Schema Branches": {
+      "main": [
+        [{ "node": "🔧 Normalize Schema", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔧 Normalize Schema": {
+      "main": [
+        [{ "node": "📝 Build AI Prompt", "type": "main", "index": 0 }]
+      ]
+    },
+    "📝 Build AI Prompt": {
+      "main": [
+        [{ "node": "🤖 Claude AI Agent", "type": "main", "index": 0 }]
+      ]
+    },
+    "🤖 Claude AI Agent": {
+      "main": [
+        [{ "node": "🔍 Parse AI Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔍 Parse AI Response": {
+      "main": [
+        [{ "node": "🔀 Query Router", "type": "main", "index": 0 }]
+      ]
+    },
+    "🔀 Query Router": {
+      "main": [
+        [{ "node": "⚡ Execute MySQL", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Execute Postgres", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Execute MSSQL", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Execute Airtable", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Execute Google Sheets", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Execute BigQuery", "type": "main", "index": 0 }],
+        [{ "node": "⚡ Execute Supabase", "type": "main", "index": 0 }]
+      ]
+    },
+    "⚡ Execute MySQL": {
+      "main": [
+        [{ "node": "🔗 Merge Results", "type": "main", "index": 0 }]
+      ]
+    },
+    "⚡ Execute Postgres": {
+      "main": [
+        [{ "node": "🔗 Merge Results", "type": "main", "index": 1 }]
+      ]
+    },
+    "⚡ Execute MSSQL": {
+      "main": [
+        [{ "node": "🔗 Merge Results", "type": "main", "index": 2 }]
+      ]
+    },
+    "⚡ Execute Airtable": {
+      "main": [
+        [{ "node": "🔗 Merge Results", "type": "main", "index": 3 }]
+      ]
+    },
+    "⚡ Execute Google Sheets": {
+      "main": [
+        [{ "node": "🔗 Merge Results", "type": "main", "index": 4 }]
+      ]
+    },
+    "⚡ Execute BigQuery": {
+      "main": [
+        [{ "node": "🔗 Merge Results", "type": "main", "index": 5 }]
+      ]
+    },
+    "⚡ Execute Supabase": {
+      "main": [
+        [{ "node": "🔗 Merge Results", "type": "main", "index": 6 }]
+      ]
+    },
+    "🔗 Merge Results": {
+      "main": [
+        [{ "node": "📋 Format Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "📋 Format Response": {
+      "main": [
+        [{ "node": "📤 Send Telegram Reply", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "versionId": "universal-db-agent-v1",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": ""
+  },
+  "id": "UNIVERSAL_DB_AGENT_001",
+  "tags": [
+    { "createdAt": "2026-03-18T00:00:00.000Z", "updatedAt": "2026-03-18T00:00:00.000Z", "id": "tag-001", "name": "ai-agent" },
+    { "createdAt": "2026-03-18T00:00:00.000Z", "updatedAt": "2026-03-18T00:00:00.000Z", "id": "tag-002", "name": "universal-database" },
+    { "createdAt": "2026-03-18T00:00:00.000Z", "updatedAt": "2026-03-18T00:00:00.000Z", "id": "tag-003", "name": "multi-tenant" }
+  ]
+}
