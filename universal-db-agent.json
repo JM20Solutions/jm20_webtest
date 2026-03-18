@@ -3,22 +3,25 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"],
-        "additionalFields": {}
+        "updates": [
+          "message"
+        ]
       },
       "id": "11111111-1111-1111-1111-111111111101",
       "name": "📱 Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [-1400, 300],
+      "position": [
+        -1400,
+        300
+      ],
       "webhookId": "universal-db-agent-v1",
       "credentials": {
         "telegramApi": {
           "id": "TELEGRAM_CRED_ID",
           "name": "Telegram Bot API"
         }
-      },
-      "notes": "Replace TELEGRAM_CRED_ID with your Telegram Bot credential ID"
+      }
     },
     {
       "parameters": {
@@ -62,7 +65,10 @@
       "name": "📥 Extract Message Data",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [-1180, 300]
+      "position": [
+        -1180,
+        300
+      ]
     },
     {
       "parameters": {
@@ -74,14 +80,16 @@
       "name": "🔍 Lookup User",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.3,
-      "position": [-960, 300],
+      "position": [
+        -960,
+        300
+      ],
       "credentials": {
         "postgres": {
           "id": "MASTER_POSTGRES_CRED_ID",
           "name": "Master Control DB"
         }
-      },
-      "notes": "This is your CONTROL database. Create a Postgres credential named 'Master Control DB' pointing to the server that holds master_clients table."
+      }
     },
     {
       "parameters": {
@@ -98,14 +106,16 @@
             }
           ],
           "combinator": "and"
-        },
-        "options": {}
+        }
       },
       "id": "11111111-1111-1111-1111-111111111104",
       "name": "✅ User Found?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [-740, 300]
+      "position": [
+        -740,
+        300
+      ]
     },
     {
       "parameters": {
@@ -120,7 +130,10 @@
       "name": "⛔ Not Registered Reply",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [-520, 560],
+      "position": [
+        -520,
+        560
+      ],
       "credentials": {
         "telegramApi": {
           "id": "TELEGRAM_CRED_ID",
@@ -200,7 +213,10 @@
       "name": "🎯 Prepare Client Context",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [-520, 300]
+      "position": [
+        -520,
+        300
+      ]
     },
     {
       "parameters": {
@@ -209,7 +225,17 @@
           "rules": [
             {
               "conditions": {
-                "conditions": [{ "id": "sr-01", "leftValue": "={{ $json.db_type }}", "rightValue": "mysql", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "sr-01",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "mysql",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -217,7 +243,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "sr-02", "leftValue": "={{ $json.db_type }}", "rightValue": "postgres", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "sr-02",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "postgres",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -225,7 +261,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "sr-03", "leftValue": "={{ $json.db_type }}", "rightValue": "mssql", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "sr-03",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "mssql",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -233,7 +279,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "sr-04", "leftValue": "={{ $json.db_type }}", "rightValue": "airtable", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "sr-04",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "airtable",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -241,7 +297,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "sr-05", "leftValue": "={{ $json.db_type }}", "rightValue": "google-sheets", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "sr-05",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "google-sheets",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -249,7 +315,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "sr-06", "leftValue": "={{ $json.db_type }}", "rightValue": "bigquery", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "sr-06",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "bigquery",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -257,21 +333,33 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "sr-07", "leftValue": "={{ $json.db_type }}", "rightValue": "supabase", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "sr-07",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "supabase",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
               "outputKey": "Supabase"
             }
           ]
-        },
-        "options": {}
+        }
       },
       "id": "11111111-1111-1111-1111-111111111107",
       "name": "🔀 Schema Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [-300, 300]
+      "position": [
+        -300,
+        300
+      ]
     },
     {
       "parameters": {
@@ -283,14 +371,16 @@
       "name": "🗄️ Schema MySQL",
       "type": "n8n-nodes-base.mysql",
       "typeVersion": 2.3,
-      "position": [-80, -520],
+      "position": [
+        -80,
+        -520
+      ],
       "credentials": {
         "mySql": {
           "id": "MYSQL_CLIENT_CRED_PLACEHOLDER",
           "name": "{{ $json.client_id }}_mysql"
         }
-      },
-      "notes": "Create MySQL credentials named '{client_id}_mysql' e.g. 'acme_mysql'. The credential connects to the client's MySQL server."
+      }
     },
     {
       "parameters": {
@@ -302,14 +392,16 @@
       "name": "🗄️ Schema Postgres",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.3,
-      "position": [-80, -320],
+      "position": [
+        -80,
+        -320
+      ],
       "credentials": {
         "postgres": {
           "id": "POSTGRES_CLIENT_CRED_PLACEHOLDER",
           "name": "{{ $json.client_id }}_postgres"
         }
-      },
-      "notes": "Create Postgres credentials named '{client_id}_postgres' e.g. 'beta_postgres'."
+      }
     },
     {
       "parameters": {
@@ -321,14 +413,16 @@
       "name": "🗄️ Schema MSSQL",
       "type": "n8n-nodes-base.mssql",
       "typeVersion": 1,
-      "position": [-80, -120],
+      "position": [
+        -80,
+        -120
+      ],
       "credentials": {
         "msSql": {
           "id": "MSSQL_CLIENT_CRED_PLACEHOLDER",
           "name": "{{ $json.client_id }}_mssql"
         }
-      },
-      "notes": "Create MSSQL credentials named '{client_id}_mssql'."
+      }
     },
     {
       "parameters": {
@@ -357,7 +451,10 @@
       "name": "☁️ Schema Airtable",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-80, 80]
+      "position": [
+        -80,
+        80
+      ]
     },
     {
       "parameters": {
@@ -380,8 +477,10 @@
       "name": "📊 Schema Google Sheets",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-80, 280],
-      "notes": "api_key in master_clients should be a Google OAuth2 access token or service account token with Sheets read access"
+      "position": [
+        -80,
+        280
+      ]
     },
     {
       "parameters": {
@@ -421,7 +520,10 @@
       "name": "🔵 Schema BigQuery",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-80, 480]
+      "position": [
+        -80,
+        480
+      ]
     },
     {
       "parameters": {
@@ -446,8 +548,10 @@
       "name": "⚡ Schema Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [-80, 680],
-      "notes": "Fetches Supabase PostgREST OpenAPI spec which contains all table/column definitions"
+      "position": [
+        -80,
+        680
+      ]
     },
     {
       "parameters": {
@@ -457,7 +561,10 @@
       "name": "🔗 Merge Schema Branches",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
-      "position": [160, 80]
+      "position": [
+        160,
+        80
+      ]
     },
     {
       "parameters": {
@@ -467,7 +574,10 @@
       "name": "🔧 Normalize Schema",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [380, 80]
+      "position": [
+        380,
+        80
+      ]
     },
     {
       "parameters": {
@@ -493,7 +603,10 @@
       "name": "📝 Build AI Prompt",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [600, 80]
+      "position": [
+        600,
+        80
+      ]
     },
     {
       "parameters": {
@@ -526,14 +639,16 @@
       "name": "🤖 Claude AI Agent",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [820, 80],
+      "position": [
+        820,
+        80
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "ANTHROPIC_CRED_ID",
           "name": "Anthropic API Key"
         }
-      },
-      "notes": "Create HTTP Header Auth credential: Header Name = 'x-api-key', Value = your Anthropic API key (sk-ant-...)"
+      }
     },
     {
       "parameters": {
@@ -543,7 +658,10 @@
       "name": "🔍 Parse AI Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1040, 80]
+      "position": [
+        1040,
+        80
+      ]
     },
     {
       "parameters": {
@@ -552,7 +670,17 @@
           "rules": [
             {
               "conditions": {
-                "conditions": [{ "id": "qr-01", "leftValue": "={{ $json.db_type }}", "rightValue": "mysql", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "qr-01",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "mysql",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -560,7 +688,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "qr-02", "leftValue": "={{ $json.db_type }}", "rightValue": "postgres", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "qr-02",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "postgres",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -568,7 +706,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "qr-03", "leftValue": "={{ $json.db_type }}", "rightValue": "mssql", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "qr-03",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "mssql",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -576,7 +724,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "qr-04", "leftValue": "={{ $json.db_type }}", "rightValue": "airtable", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "qr-04",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "airtable",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -584,7 +742,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "qr-05", "leftValue": "={{ $json.db_type }}", "rightValue": "google-sheets", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "qr-05",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "google-sheets",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -592,7 +760,17 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "qr-06", "leftValue": "={{ $json.db_type }}", "rightValue": "bigquery", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "qr-06",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "bigquery",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
@@ -600,21 +778,33 @@
             },
             {
               "conditions": {
-                "conditions": [{ "id": "qr-07", "leftValue": "={{ $json.db_type }}", "rightValue": "supabase", "operator": { "type": "string", "operation": "equals" } }],
+                "conditions": [
+                  {
+                    "id": "qr-07",
+                    "leftValue": "={{ $json.db_type }}",
+                    "rightValue": "supabase",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
                 "combinator": "and"
               },
               "renameOutput": true,
               "outputKey": "Supabase"
             }
           ]
-        },
-        "options": {}
+        }
       },
       "id": "11111111-1111-1111-1111-111111111120",
       "name": "🔀 Query Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3,
-      "position": [1260, 80]
+      "position": [
+        1260,
+        80
+      ]
     },
     {
       "parameters": {
@@ -626,14 +816,16 @@
       "name": "⚡ Execute MySQL",
       "type": "n8n-nodes-base.mysql",
       "typeVersion": 2.3,
-      "position": [1480, -520],
+      "position": [
+        1480,
+        -520
+      ],
       "credentials": {
         "mySql": {
           "id": "MYSQL_CLIENT_CRED_PLACEHOLDER",
           "name": "{{ $json.client_id }}_mysql"
         }
-      },
-      "notes": "Uses same credential as Schema MySQL. Named '{client_id}_mysql'."
+      }
     },
     {
       "parameters": {
@@ -645,7 +837,10 @@
       "name": "⚡ Execute Postgres",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.3,
-      "position": [1480, -320],
+      "position": [
+        1480,
+        -320
+      ],
       "credentials": {
         "postgres": {
           "id": "POSTGRES_CLIENT_CRED_PLACEHOLDER",
@@ -663,7 +858,10 @@
       "name": "⚡ Execute MSSQL",
       "type": "n8n-nodes-base.mssql",
       "typeVersion": 1,
-      "position": [1480, -120],
+      "position": [
+        1480,
+        -120
+      ],
       "credentials": {
         "msSql": {
           "id": "MSSQL_CLIENT_CRED_PLACEHOLDER",
@@ -673,7 +871,7 @@
     },
     {
       "parameters": {
-        "method": "=GET",
+        "method": "GET",
         "url": "=https://api.airtable.com/v0/{{ $json.db_config.baseId }}/{{ encodeURIComponent($json.db_config.table || 'Orders') }}{{ $json.ai_query.startsWith('?') ? $json.ai_query : '' }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
@@ -698,8 +896,10 @@
       "name": "⚡ Execute Airtable",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1480, 80],
-      "notes": "For Airtable, ai_query should be URL query params like: ?filterByFormula=...&maxRecords=10"
+      "position": [
+        1480,
+        80
+      ]
     },
     {
       "parameters": {
@@ -728,8 +928,10 @@
       "name": "⚡ Execute Google Sheets",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1480, 280],
-      "notes": "For Google Sheets, ai_query should be A1 notation range like: A1:G50 or A:Z"
+      "position": [
+        1480,
+        280
+      ]
     },
     {
       "parameters": {
@@ -760,7 +962,10 @@
       "name": "⚡ Execute BigQuery",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1480, 480]
+      "position": [
+        1480,
+        480
+      ]
     },
     {
       "parameters": {
@@ -795,8 +1000,10 @@
       "name": "⚡ Execute Supabase",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1480, 680],
-      "notes": "For Supabase, ai_query should be PostgREST path+params like: orders?status=eq.pending&select=id,status,total&limit=10"
+      "position": [
+        1480,
+        680
+      ]
     },
     {
       "parameters": {
@@ -806,7 +1013,10 @@
       "name": "🔗 Merge Results",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
-      "position": [1700, 80]
+      "position": [
+        1700,
+        80
+      ]
     },
     {
       "parameters": {
@@ -816,7 +1026,10 @@
       "name": "📋 Format Response",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1920, 80]
+      "position": [
+        1920,
+        80
+      ]
     },
     {
       "parameters": {
@@ -831,7 +1044,10 @@
       "name": "📤 Send Telegram Reply",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.1,
-      "position": [2140, 80],
+      "position": [
+        2140,
+        80
+      ],
       "credentials": {
         "telegramApi": {
           "id": "TELEGRAM_CRED_ID",
@@ -843,155 +1059,401 @@
   "connections": {
     "📱 Telegram Trigger": {
       "main": [
-        [{ "node": "📥 Extract Message Data", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "📥 Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "📥 Extract Message Data": {
       "main": [
-        [{ "node": "🔍 Lookup User", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🔍 Lookup User",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🔍 Lookup User": {
       "main": [
-        [{ "node": "✅ User Found?", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "✅ User Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "✅ User Found?": {
       "main": [
-        [{ "node": "🎯 Prepare Client Context", "type": "main", "index": 0 }],
-        [{ "node": "⛔ Not Registered Reply", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🎯 Prepare Client Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⛔ Not Registered Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🎯 Prepare Client Context": {
       "main": [
-        [{ "node": "🔀 Schema Router", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🔀 Schema Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🔀 Schema Router": {
       "main": [
-        [{ "node": "🗄️ Schema MySQL", "type": "main", "index": 0 }],
-        [{ "node": "🗄️ Schema Postgres", "type": "main", "index": 0 }],
-        [{ "node": "🗄️ Schema MSSQL", "type": "main", "index": 0 }],
-        [{ "node": "☁️ Schema Airtable", "type": "main", "index": 0 }],
-        [{ "node": "📊 Schema Google Sheets", "type": "main", "index": 0 }],
-        [{ "node": "🔵 Schema BigQuery", "type": "main", "index": 0 }],
-        [{ "node": "⚡ Schema Supabase", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🗄️ Schema MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🗄️ Schema Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🗄️ Schema MSSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "☁️ Schema Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📊 Schema Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔵 Schema BigQuery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⚡ Schema Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🗄️ Schema MySQL": {
       "main": [
-        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🔗 Merge Schema Branches",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🗄️ Schema Postgres": {
       "main": [
-        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 1 }]
+        [
+          {
+            "node": "🔗 Merge Schema Branches",
+            "type": "main",
+            "index": 1
+          }
+        ]
       ]
     },
     "🗄️ Schema MSSQL": {
       "main": [
-        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 2 }]
+        [
+          {
+            "node": "🔗 Merge Schema Branches",
+            "type": "main",
+            "index": 2
+          }
+        ]
       ]
     },
     "☁️ Schema Airtable": {
       "main": [
-        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 3 }]
+        [
+          {
+            "node": "🔗 Merge Schema Branches",
+            "type": "main",
+            "index": 3
+          }
+        ]
       ]
     },
     "📊 Schema Google Sheets": {
       "main": [
-        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 4 }]
+        [
+          {
+            "node": "🔗 Merge Schema Branches",
+            "type": "main",
+            "index": 4
+          }
+        ]
       ]
     },
     "🔵 Schema BigQuery": {
       "main": [
-        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 5 }]
+        [
+          {
+            "node": "🔗 Merge Schema Branches",
+            "type": "main",
+            "index": 5
+          }
+        ]
       ]
     },
     "⚡ Schema Supabase": {
       "main": [
-        [{ "node": "🔗 Merge Schema Branches", "type": "main", "index": 6 }]
+        [
+          {
+            "node": "🔗 Merge Schema Branches",
+            "type": "main",
+            "index": 6
+          }
+        ]
       ]
     },
     "🔗 Merge Schema Branches": {
       "main": [
-        [{ "node": "🔧 Normalize Schema", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🔧 Normalize Schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🔧 Normalize Schema": {
       "main": [
-        [{ "node": "📝 Build AI Prompt", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "📝 Build AI Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "📝 Build AI Prompt": {
       "main": [
-        [{ "node": "🤖 Claude AI Agent", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🤖 Claude AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🤖 Claude AI Agent": {
       "main": [
-        [{ "node": "🔍 Parse AI Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🔍 Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🔍 Parse AI Response": {
       "main": [
-        [{ "node": "🔀 Query Router", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🔀 Query Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "🔀 Query Router": {
       "main": [
-        [{ "node": "⚡ Execute MySQL", "type": "main", "index": 0 }],
-        [{ "node": "⚡ Execute Postgres", "type": "main", "index": 0 }],
-        [{ "node": "⚡ Execute MSSQL", "type": "main", "index": 0 }],
-        [{ "node": "⚡ Execute Airtable", "type": "main", "index": 0 }],
-        [{ "node": "⚡ Execute Google Sheets", "type": "main", "index": 0 }],
-        [{ "node": "⚡ Execute BigQuery", "type": "main", "index": 0 }],
-        [{ "node": "⚡ Execute Supabase", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "⚡ Execute MySQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⚡ Execute Postgres",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⚡ Execute MSSQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⚡ Execute Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⚡ Execute Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⚡ Execute BigQuery",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "⚡ Execute Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "⚡ Execute MySQL": {
       "main": [
-        [{ "node": "🔗 Merge Results", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "🔗 Merge Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "⚡ Execute Postgres": {
       "main": [
-        [{ "node": "🔗 Merge Results", "type": "main", "index": 1 }]
+        [
+          {
+            "node": "🔗 Merge Results",
+            "type": "main",
+            "index": 1
+          }
+        ]
       ]
     },
     "⚡ Execute MSSQL": {
       "main": [
-        [{ "node": "🔗 Merge Results", "type": "main", "index": 2 }]
+        [
+          {
+            "node": "🔗 Merge Results",
+            "type": "main",
+            "index": 2
+          }
+        ]
       ]
     },
     "⚡ Execute Airtable": {
       "main": [
-        [{ "node": "🔗 Merge Results", "type": "main", "index": 3 }]
+        [
+          {
+            "node": "🔗 Merge Results",
+            "type": "main",
+            "index": 3
+          }
+        ]
       ]
     },
     "⚡ Execute Google Sheets": {
       "main": [
-        [{ "node": "🔗 Merge Results", "type": "main", "index": 4 }]
+        [
+          {
+            "node": "🔗 Merge Results",
+            "type": "main",
+            "index": 4
+          }
+        ]
       ]
     },
     "⚡ Execute BigQuery": {
       "main": [
-        [{ "node": "🔗 Merge Results", "type": "main", "index": 5 }]
+        [
+          {
+            "node": "🔗 Merge Results",
+            "type": "main",
+            "index": 5
+          }
+        ]
       ]
     },
     "⚡ Execute Supabase": {
       "main": [
-        [{ "node": "🔗 Merge Results", "type": "main", "index": 6 }]
+        [
+          {
+            "node": "🔗 Merge Results",
+            "type": "main",
+            "index": 6
+          }
+        ]
       ]
     },
     "🔗 Merge Results": {
       "main": [
-        [{ "node": "📋 Format Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "📋 Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "📋 Format Response": {
       "main": [
-        [{ "node": "📤 Send Telegram Reply", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "📤 Send Telegram Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -1009,8 +1471,23 @@
   },
   "id": "UNIVERSAL_DB_AGENT_001",
   "tags": [
-    { "createdAt": "2026-03-18T00:00:00.000Z", "updatedAt": "2026-03-18T00:00:00.000Z", "id": "tag-001", "name": "ai-agent" },
-    { "createdAt": "2026-03-18T00:00:00.000Z", "updatedAt": "2026-03-18T00:00:00.000Z", "id": "tag-002", "name": "universal-database" },
-    { "createdAt": "2026-03-18T00:00:00.000Z", "updatedAt": "2026-03-18T00:00:00.000Z", "id": "tag-003", "name": "multi-tenant" }
+    {
+      "createdAt": "2026-03-18T00:00:00.000Z",
+      "updatedAt": "2026-03-18T00:00:00.000Z",
+      "id": "tag-001",
+      "name": "ai-agent"
+    },
+    {
+      "createdAt": "2026-03-18T00:00:00.000Z",
+      "updatedAt": "2026-03-18T00:00:00.000Z",
+      "id": "tag-002",
+      "name": "universal-database"
+    },
+    {
+      "createdAt": "2026-03-18T00:00:00.000Z",
+      "updatedAt": "2026-03-18T00:00:00.000Z",
+      "id": "tag-003",
+      "name": "multi-tenant"
+    }
   ]
 }
